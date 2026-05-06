@@ -110,7 +110,7 @@ switch ($Action) {
 
     "test" {
         Push-Code
-        Remote "git pull origin $Branch && if [ ! -f .env ] && [ -f .env.example ]; then cp .env.example .env && chmod 600 .env; fi && docker compose run --rm app npm test"
+        Remote "git pull origin $Branch && if [ ! -f .env ] && [ -f .env.example ]; then cp .env.example .env && chmod 600 .env; fi && docker compose up -d --build && sleep 5 && docker compose exec app node --test tests/api.test.js"
     }
 
     "status" {
@@ -151,9 +151,12 @@ switch ($Action) {
 
     "full-check" {
         Push-Code
-        Remote "git pull origin $Branch && if [ ! -f .env ] && [ -f .env.example ]; then cp .env.example .env && chmod 600 .env; fi && docker compose up -d --build && docker compose logs --tail=150"
+        Remote "git pull origin $Branch && if [ ! -f .env ] && [ -f .env.example ]; then cp .env.example .env && chmod 600 .env; fi && docker compose up -d --build && sleep 5 && docker compose logs --tail=150"
+        Start-Sleep -Seconds 3
         try {
-            Invoke-WebRequest -Uri $HealthUrl -UseBasicParsing -TimeoutSec 20
+            $response = Invoke-WebRequest -Uri $HealthUrl -UseBasicParsing -TimeoutSec 30
+            Write-Host "Health check passed: $($response.StatusCode)"
+            Write-Host $response.Content
         } catch {
             Write-Host "Health check failed:"
             Write-Host $_

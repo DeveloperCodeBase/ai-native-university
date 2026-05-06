@@ -4,6 +4,35 @@
 
 Code is edited locally on Windows, but runtime and testing must be executed on the Ubuntu VPS.
 
+## Project Structure
+
+```text
+ai-native-university/
+├── server.js                 # Express server entry point
+├── package.json
+├── Dockerfile
+├── docker-compose.yml
+├── public/                   # Static frontend (served by Express)
+│   ├── index.html            # SPA shell
+│   ├── css/styles.css        # Design system
+│   └── js/app.js             # Client SPA router and logic
+├── src/
+│   ├── data/
+│   │   ├── courses.js        # Course catalog data
+│   │   └── quizzes.js        # Quiz data per lesson
+│   ├── lib/
+│   │   └── openrouter.js     # OpenRouter API client
+│   └── routes/
+│       ├── courses.js        # Course/lesson API routes
+│       ├── tutor.js          # AI tutor chat routes
+│       └── quiz.js           # Quiz evaluation routes
+├── tests/
+│   └── api.test.js           # API endpoint tests
+├── scripts/
+│   └── remote.ps1            # Remote deployment script
+└── docs/                     # Documentation
+```
+
 ## Common Commands
 
 From Windows PowerShell in the project root:
@@ -38,6 +67,19 @@ From Windows PowerShell in the project root:
 
 6. Fix errors locally.
 7. Repeat until successful.
+
+## Adding a New Course
+
+1. Add course object to `src/data/courses.js` with `id`, `title`, `description`, `category`, `difficulty`, `icon`, `color`, `estimatedHours`, and `lessons[]`.
+2. Add quiz data for each lesson in `src/data/quizzes.js`.
+3. The frontend and API will automatically pick up the new course.
+
+## Adding a New API Endpoint
+
+1. Create or modify route file in `src/routes/`.
+2. Mount the router in `server.js`.
+3. Add tests in `tests/api.test.js`.
+4. Update API documentation in README.md.
 
 ## AI Development Rules
 

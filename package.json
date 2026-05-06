@@ -1,12 +1,13 @@
 {
   "name": "ai-native-university",
-  "version": "1.0.0",
-  "description": "AI Native University remote workflow baseline for Windows Antigravity + Ubuntu VPS + OpenRouter.",
+  "version": "1.1.0",
+  "description": "AI Native University — AI-powered learning platform with courses, quizzes, and an AI tutor. Uses OpenRouter for all AI calls.",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node -e \"console.log('test ok')\"",
-    "lint": "node -c server.js && node -c src/lib/openrouter.js"
+    "test": "node --test tests/api.test.js",
+    "test:local": "TEST_BASE_URL=http://localhost:3000 node --test tests/api.test.js",
+    "lint": "node -c server.js && node -c src/lib/openrouter.js && node -c src/data/courses.js && node -c src/data/quizzes.js && node -c src/routes/courses.js && node -c src/routes/tutor.js && node -c src/routes/quiz.js"
   },
   "dependencies": {
     "express": "^4.18.3"

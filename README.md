@@ -1,15 +1,17 @@
 # AI Native University
 
-AI Native University is a remote-deployable software project developed locally on Windows using Google Antigravity and executed on an Ubuntu VPS through Docker.
+AI Native University is an AI-powered learning platform where users can browse courses on AI, prompt engineering, and machine learning, read in-depth lessons, take AI-graded quizzes, and chat with a context-aware AI tutor.
 
-## Project Goals
+Built locally on Windows with Google Antigravity. Deployed on Ubuntu VPS via Docker.
 
-- Build a production-ready AI-native university platform.
-- Keep implementation, deployment, testing, and documentation synchronized.
-- Use GitHub as the source of truth.
-- Use Ubuntu VPS as the runtime and test environment.
-- Use OpenRouter as the only AI model gateway.
-- Use Google Antigravity as the coding and agentic implementation environment.
+## Features
+
+- 📚 **3 Expert Courses** — Introduction to AI, Prompt Engineering, ML Fundamentals
+- 📖 **9 In-Depth Lessons** — Full markdown educational content
+- 📝 **Interactive Quizzes** — Multiple-choice and AI-graded free-text questions
+- 🤖 **AI Tutor** — Context-aware chat that adapts to your current course and lesson
+- 🎨 **Premium UI** — Dark theme with glassmorphism, animations, and responsive design
+- 🔒 **OpenRouter Only** — All AI calls routed through OpenRouter gateway
 
 ## Runtime Architecture
 
@@ -192,19 +194,73 @@ If environment variables change, update:
 
 ## API Endpoints
 
-### Basic health
+### Health
 
 ```text
 GET /health
 ```
 
-### AI health through OpenRouter
+### AI Health (OpenRouter)
 
 ```text
 GET /api/ai-health
 ```
 
-### Basic chat through OpenRouter
+### Course Catalog
+
+```text
+GET /api/courses
+```
+
+### Course Detail
+
+```text
+GET /api/courses/:id
+```
+
+### Lesson Content
+
+```text
+GET /api/courses/:id/lessons/:lessonId
+```
+
+### Quiz Questions
+
+```text
+GET /api/courses/:id/lessons/:lessonId/quiz
+```
+
+### Quiz Evaluation
+
+```text
+POST /api/quiz/evaluate
+Content-Type: application/json
+
+{
+  "courseId": "intro-to-ai",
+  "lessonId": "what-is-ai",
+  "answers": [
+    { "id": "q1", "answer": 0 },
+    { "id": "q3", "answer": "Narrow AI handles specific tasks while AGI would handle any task." }
+  ]
+}
+```
+
+### AI Tutor Chat
+
+```text
+POST /api/tutor/chat
+Content-Type: application/json
+
+{
+  "message": "Explain backpropagation",
+  "courseId": "ml-fundamentals",
+  "lessonId": "neural-networks",
+  "history": []
+}
+```
+
+### Basic Chat
 
 ```text
 POST /api/chat
@@ -251,6 +307,7 @@ Google Antigravity must follow this workflow:
 .\scripts\remote.ps1 env-create
 .\scripts\remote.ps1 up
 .\scripts\remote.ps1 restart
+.\scripts\remote.ps1 rebuild-clean
 .\scripts\remote.ps1 logs
 .\scripts\remote.ps1 logs-live
 .\scripts\remote.ps1 test

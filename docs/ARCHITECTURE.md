@@ -9,6 +9,45 @@ This document explains the architecture of AI Native University.
 - Source code is synchronized through GitHub.
 - The VPS pulls the latest code and runs Docker Compose.
 
+## System Architecture
+
+```text
+┌─────────────────────────────────────────────┐
+│                  Frontend                    │
+│  public/index.html (SPA shell)              │
+│  public/css/styles.css (design system)      │
+│  public/js/app.js (client router + UI)      │
+│  marked.js (CDN, markdown rendering)        │
+└──────────────────┬──────────────────────────┘
+                   │ HTTP / JSON
+┌──────────────────▼──────────────────────────┐
+│              Express Server                  │
+│  server.js                                   │
+│  ├─ GET  /health                             │
+│  ├─ GET  /api/ai-health                      │
+│  ├─ POST /api/chat                           │
+│  ├─ GET  /api/courses                        │
+│  ├─ GET  /api/courses/:id                    │
+│  ├─ GET  /api/courses/:id/lessons/:lid       │
+│  ├─ GET  /api/courses/:id/lessons/:lid/quiz  │
+│  ├─ POST /api/quiz/evaluate                  │
+│  └─ POST /api/tutor/chat                     │
+└──────────────────┬──────────────────────────┘
+                   │
+    ┌──────────────┼──────────────┐
+    ▼              ▼              ▼
+┌────────┐  ┌───────────┐  ┌──────────┐
+│ Data   │  │ OpenRouter │  │ Quiz     │
+│ Layer  │  │ Client     │  │ Evaluator│
+│courses │  │openrouter  │  │(AI-graded│
+│quizzes │  │.js         │  │ answers) │
+└────────┘  └─────┬─────┘  └──────────┘
+                  │
+                  ▼
+          OpenRouter API
+    https://openrouter.ai/api/v1
+```
+
 ## Environments
 
 ### Local Windows
@@ -46,9 +85,9 @@ All AI functionality must use OpenRouter as the single AI gateway.
 ```text
 Application
     ↓
-OpenRouter-compatible client
+OpenRouter-compatible client (src/lib/openrouter.js)
     ↓
-https://openrouter.ai/api/v1
+https://openrouter.ai/api/v1/chat/completions
     ↓
 Selected OpenRouter model slug
 ```
@@ -66,6 +105,23 @@ Forbidden:
 - Direct Anthropic endpoint
 - Direct Gemini endpoint
 - Direct provider-specific API keys
+
+## Frontend Architecture
+
+The frontend is a vanilla JavaScript SPA served as static files:
+
+- **Hash-based routing** — `#/`, `#/courses`, `#/courses/:id`, etc.
+- **No build step** — No bundler, transpiler, or framework
+- **API-driven** — All data fetched from Express API endpoints
+- **Markdown rendering** — Lesson content rendered with marked.js (CDN)
+- **Responsive design** — Mobile-first with glassmorphism dark theme
+
+## Data Layer
+
+Phase 1 uses static JavaScript data files (no database):
+
+- `src/data/courses.js` — 3 courses × 3 lessons with full markdown content
+- `src/data/quizzes.js` — Multiple-choice and free-text questions per lesson
 
 ## Important Constraint
 

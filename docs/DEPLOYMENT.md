@@ -22,6 +22,12 @@ From Windows PowerShell:
 .\scripts\remote.ps1 restart
 ```
 
+## Clean Rebuild
+
+```powershell
+.\scripts\remote.ps1 rebuild-clean
+```
+
 ## View Logs
 
 ```powershell
@@ -39,6 +45,14 @@ From Windows PowerShell:
 ```powershell
 .\scripts\remote.ps1 full-check
 ```
+
+## Run Tests
+
+```powershell
+.\scripts\remote.ps1 test
+```
+
+Tests run inside the Docker container against the live server using Node.js built-in test runner.
 
 ## Environment File
 
@@ -79,3 +93,24 @@ If AI calls fail:
 .\scripts\remote.ps1 logs
 .\scripts\remote.ps1 diagnose
 ```
+
+## Docker Configuration
+
+Container mapping: host port 3010 → container port 3000.
+
+The Dockerfile uses `npm ci --omit=dev` for reproducible production builds.
+
+## Exposed Endpoints
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | / | Frontend SPA |
+| GET | /health | Health check |
+| GET | /api/ai-health | AI health (OpenRouter) |
+| POST | /api/chat | Basic chat |
+| GET | /api/courses | Course list |
+| GET | /api/courses/:id | Course detail |
+| GET | /api/courses/:id/lessons/:lid | Lesson content |
+| GET | /api/courses/:id/lessons/:lid/quiz | Quiz questions |
+| POST | /api/quiz/evaluate | Quiz grading |
+| POST | /api/tutor/chat | AI tutor chat |

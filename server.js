@@ -1,15 +1,19 @@
 const express = require("express");
+const path = require("path");
 const { chatWithOpenRouter } = require("./src/lib/openrouter");
+const courseRoutes = require("./src/routes/courses");
+const tutorRoutes = require("./src/routes/tutor");
+const quizRoutes = require("./src/routes/quiz");
 
 const app = express();
 const port = process.env.PORT || 3000;
 
 app.use(express.json({ limit: "1mb" }));
 
-app.get("/", (req, res) => {
-  res.type("text/plain").send("AI Native University is running on Ubuntu VPS.");
-});
+// Serve static frontend files
+app.use(express.static(path.join(__dirname, "public")));
 
+// Health check
 app.get("/health", (req, res) => {
   res.json({
     ok: true,
@@ -20,6 +24,7 @@ app.get("/health", (req, res) => {
   });
 });
 
+// AI health check
 app.get("/api/ai-health", async (req, res) => {
   try {
     const result = await chatWithOpenRouter([
@@ -48,6 +53,7 @@ app.get("/api/ai-health", async (req, res) => {
   }
 });
 
+// Legacy chat endpoint (kept for backward compatibility)
 app.post("/api/chat", async (req, res) => {
   try {
     const userMessage = req.body?.message;
@@ -76,6 +82,25 @@ app.post("/api/chat", async (req, res) => {
   } catch (error) {
     res.status(500).json({ ok: false, error: error.message });
   }
+});
+
+// API routes
+app.use("/api/courses", courseRoutes);
+app.use("/api/tutor", tutorRoutes);
+app.use("/api/quiz", quizRoutes);
+
+// SPA fallback — serve index.html for non-API routes
+app.get("*", (req, res) => {
+  if (req.path.startsWith("/api/")) {
+    return res.status(404).json({ ok: false, error: "Endpoint not found" });
+  }
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// Error handler
+app.use((err, req, res, _next) => {
+  console.error("Unhandled error:", err.message);
+  res.status(500).json({ ok: false, error: "Internal server error" });
 });
 
 app.listen(port, "0.0.0.0", () => {
