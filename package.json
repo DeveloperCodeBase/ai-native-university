@@ -1,11 +1,17 @@
 {
   "name": "ai-native-university",
   "version": "1.0.0",
+  "description": "AI Native University remote workflow baseline for Windows Antigravity + Ubuntu VPS + OpenRouter.",
+  "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node -e \"console.log('test ok')\""
+    "test": "node -e \"console.log('test ok')\"",
+    "lint": "node -c server.js && node -c src/lib/openrouter.js"
   },
   "dependencies": {
     "express": "^4.18.3"
+  },
+  "engines": {
+    "node": ">=20"
   }
 }
