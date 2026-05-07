@@ -19,6 +19,7 @@ export default function HomePage() {
               <span className="gradient-text">دانشگاه هوشمند</span>
             </div>
             <div className={styles.navLinks}>
+              <a href="/courses" className={styles.navLink}>📚 دروس</a>
               <a href="#features" className={styles.navLink}>امکانات</a>
               <a href="#ai" className={styles.navLink}>هوش مصنوعی</a>
               <a href="/login" className="btn btn-primary">ورود</a>
@@ -42,11 +43,11 @@ export default function HomePage() {
               ارزیابی هوشمند و تحلیل پیشرفته یادگیری — همه در یک پلتفرم
             </p>
             <div className={styles.heroCta}>
-              <a href="/register" className="btn btn-primary btn-lg">
-                شروع یادگیری ←
+              <a href="/courses" className="btn btn-primary btn-lg">
+                مشاهده دروس ←
               </a>
-              <a href="#features" className="btn btn-secondary btn-lg">
-                بیشتر بدانید
+              <a href="/login" className="btn btn-secondary btn-lg">
+                ورود به پنل
               </a>
             </div>
           </div>

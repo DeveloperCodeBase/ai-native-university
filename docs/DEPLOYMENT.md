@@ -60,12 +60,23 @@ The `.env` file exists only on the VPS. Create it from `.env.example`:
 | `POSTGRES_USER` | Database user | `ainu` |
 | `POSTGRES_PASSWORD` | Database password | `ainu_secret` |
 | `POSTGRES_DB` | Database name | `ainu_db` |
+| `DATABASE_URL` | Full Postgres connection string | (composed from above) |
 | `REDIS_PASSWORD` | Redis password | `ainu_redis_secret` |
 | `JWT_SECRET` | JWT signing secret (32+ chars) | change-me |
 | `AI_MODE` | `mock` or `external_api` | `mock` |
+| `AI_GATEWAY_URL` | AI Gateway internal URL | `http://ai-gateway:8000` |
+| `AI_GATEWAY_API_KEY` | API key for gateway auth | change-me |
 | `OPENROUTER_API_KEY` | OpenRouter API key | empty |
 | `OPENROUTER_BASE_URL` | OpenRouter base URL | `https://openrouter.ai/api/v1` |
+| `OPENROUTER_DEFAULT_MODEL` | Default model slug | `openai/gpt-4o-mini` |
 | `EXTERNAL_PORT` | Public port | `3010` |
+
+### Docker Networking Note
+
+Inside Docker, services communicate via Docker DNS:
+- API → AI Gateway: `http://ai-gateway:8000`
+- Web → API: Uses nginx proxy `/api` → `http://api:4000`
+- Web → AI Gateway: Uses nginx proxy `/ai` → `http://ai-gateway:8000`
 
 ## Ports
 
@@ -78,6 +89,17 @@ The `.env` file exists only on the VPS. Create it from `.env.example`:
 | 5432 | postgres (internal) | Docker only |
 | 6379 | redis (internal) | Docker only |
 | 9000 | minio (internal) | Docker only |
+
+## Post-Deploy Verification
+
+After `.\scripts\remote.ps1 up`:
+
+1. Check containers: `.\scripts\remote.ps1 status`
+2. Check API health: `.\scripts\remote.ps1 health`
+3. Check AI health: `.\scripts\remote.ps1 ai-health`
+4. Check logs: `.\scripts\remote.ps1 logs`
+5. Run migration: `.\scripts\remote.ps1 db-migrate`
+6. Seed data: `.\scripts\remote.ps1 db-seed`
 
 ## Troubleshooting
 

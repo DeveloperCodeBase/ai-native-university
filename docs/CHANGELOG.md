@@ -2,6 +2,43 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.1.0] - 2026-05-07
+
+### Added — Phase 2: Core University Domain API
+- Faculty module — CRUD for Faculty, Department, Program (tenant-scoped)
+- Course module — CRUD for Course, CourseModule, Lesson, CourseInstructor assignment
+- Enrollment module — Student enrollment, progress tracking, status management
+- ClassSession module — Session CRUD, attendance (join/leave), recording management
+- Assessment module — Assessment, Question, Submission CRUD, auto-grade MCQ, manual grading
+- Public course catalog endpoint (no auth required, published courses only)
+
+### Added — Phase 3: AI Integration
+- AiService — NestJS client for AI Gateway with automatic AiInteractionLog
+- AI controller — RAG tutor, class summarization, concept extraction, quiz generation, logs
+- Every AI interaction logged with: confidence, model, provider, latencyMs, humanReviewRequired
+- correlationId tracing between API and AI Gateway
+
+### Added — Phase 5: Learning Analytics
+- Analytics module — Event ingestion (single + batch), student progress, course analytics
+- Tenant analytics dashboard endpoint (admin only)
+- Rule-based risk scoring with explicit human review requirement
+- toPersianNum utility in frontend for Persian number rendering
+
+### Added — Frontend Pages
+- `/courses` — Course catalog with search, level filter, responsive card grid
+- `/courses/[slug]` — Course detail with hero, enrollment, module accordion, lesson list
+- `/tutor` — AI Tutor chat with course context, confidence/model badges, source citations
+- `lib/api.ts` — Shared API client with auth headers, typed helpers
+- Student dashboard — fetches real enrollment + analytics data
+- Instructor dashboard — fetches real course data with student counts
+- Admin dashboard — fetches real tenant analytics with event breakdown
+
+### Changed
+- Updated `app.module.ts` to register 7 new domain modules
+- Homepage nav links now include Courses catalog
+- Hero CTA links updated to Courses and Login
+- All dashboards use real API data instead of hardcoded values
+
 ## [2.0.0] - 2026-05-07
 
 ### Added — Phase 1: Repository Scaffold

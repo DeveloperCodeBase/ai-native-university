@@ -169,6 +169,38 @@ The AI Gateway runs in two modes controlled by `AI_MODE` env variable:
 
 ---
 
+## Backend API Modules
+
+| Module | Base Path | Key Operations |
+|--------|-----------|----------------|
+| Auth | `/api/auth` | Login, register, refresh token |
+| Tenants | `/api/tenants` | CRUD (super_admin only) |
+| Users | `/api/users` | Tenant-scoped CRUD |
+| Faculties | `/api/faculties` | Faculty, Department, Program CRUD |
+| Courses | `/api/courses` | Course, Module, Lesson, Instructor CRUD |
+| Enrollments | `/api/enrollments` | Enroll, progress, status |
+| Class Sessions | `/api/class-sessions` | Sessions, attendance, recordings |
+| Assessments | `/api/assessments` | Quizzes, questions, submissions, grading |
+| Analytics | `/api/analytics` | Events, progress, risk score |
+| AI | `/api/ai` | RAG tutor, class analysis, AI logs |
+
+---
+
+## Frontend Pages
+
+| Route | Description |
+|-------|-------------|
+| `/` | Landing page (Persian RTL, glassmorphism) |
+| `/login` | Login with demo credentials |
+| `/courses` | Course catalog (search, filter) |
+| `/courses/[slug]` | Course detail + enrollment |
+| `/tutor` | AI Tutor chat (RAG, governance metadata) |
+| `/dashboard/admin` | Admin analytics dashboard |
+| `/dashboard/instructor` | Instructor course dashboard |
+| `/dashboard/student` | Student progress dashboard |
+
+---
+
 ## VPS Deployment
 
 Per `AGENT_RUNBOOK.md`, deploy via:

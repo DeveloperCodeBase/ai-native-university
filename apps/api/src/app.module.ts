@@ -7,6 +7,13 @@ import { AuthModule } from './auth/auth.module';
 import { AuditModule } from './audit/audit.module';
 import { TenantModule } from './tenant/tenant.module';
 import { UserModule } from './user/user.module';
+import { FacultyModule } from './faculty/faculty.module';
+import { CourseModule } from './course/course.module';
+import { EnrollmentModule } from './enrollment/enrollment.module';
+import { ClassSessionModule } from './class-session/class-session.module';
+import { AssessmentModule } from './assessment/assessment.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { AiModule } from './ai/ai.module';
 
 @Module({
   imports: [
@@ -20,6 +27,13 @@ import { UserModule } from './user/user.module';
     AuthModule,
     TenantModule,
     UserModule,
+    FacultyModule,
+    CourseModule,
+    EnrollmentModule,
+    ClassSessionModule,
+    AssessmentModule,
+    AnalyticsModule,
+    AiModule,
   ],
   controllers: [HealthController],
 })
