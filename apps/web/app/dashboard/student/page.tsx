@@ -101,7 +101,7 @@ export default function StudentDashboard() {
           <a href="/dashboard/student" className={`${styles.navItem} ${styles.navItemActive}`}>📊 داشبورد</a>
           <a href="/courses" className={styles.navItem}>📚 کاتالوگ دروس</a>
           <a href="/tutor" className={styles.navItem}>🤖 تیوتر هوشمند</a>
-          <a href="/courses" className={styles.navItem}>🎥 کلاس‌ها</a>
+          <a href="/sessions" className={styles.navItem}>🎥 جلسات کلاس</a>
           <a href="/courses" className={styles.navItem}>📝 آزمون‌ها</a>
         </nav>
         <button onClick={logout} className={styles.logoutBtn}>🚪 خروج</button>

@@ -67,6 +67,7 @@ export default function AdminDashboard() {
           <a href="/dashboard/admin" className={`${styles.navItem} ${styles.navItemActive}`}>📊 داشبورد</a>
           <a href="/courses" className={styles.navItem}>📚 دروس</a>
           <a href="/tutor" className={styles.navItem}>🤖 تیوتر هوشمند</a>
+          <a href="/sessions" className={styles.navItem}>🎥 جلسات کلاس</a>
           <a href="/dashboard/admin" className={styles.navItem}>🏛️ دانشکده‌ها</a>
           <a href="/dashboard/admin" className={styles.navItem}>👥 کاربران</a>
           <a href="/dashboard/admin" className={styles.navItem}>📈 تحلیل‌ها</a>

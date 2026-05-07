@@ -2,6 +2,24 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.3.0] - 2026-05-07
+
+### Added — Phase 4: Class Sessions Frontend
+- `/sessions` page — Lists all class sessions with status badges, join/attendance buttons, recording indicators
+- Persian date formatting with `toLocaleDateString('fa-IR')`
+- Session status: scheduled/live/ended/cancelled with visual indicators
+- Navigation links updated in student, instructor, and admin dashboards
+
+### Added — Phase 6: Documentation
+- `docs/DATA_DICTIONARY.md` — Complete data dictionary with 21 entities, ER diagram, column definitions
+- `docs/API_REFERENCE.md` — Full API reference with all endpoints, request/response examples, roles table
+- `docs/TESTING.md` — Testing guide with framework info, coverage, strategy, CI/CD
+
+### Changed
+- Student dashboard: nav link to `/sessions`
+- Instructor dashboard: nav link to `/sessions`
+- Admin dashboard: added `/sessions` to sidebar navigation
+
 ## [2.2.0] - 2026-05-07
 
 ### Added — Phase 3: OpenRouter Integration

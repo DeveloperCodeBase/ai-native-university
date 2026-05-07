@@ -198,9 +198,25 @@ The AI Gateway runs in two modes controlled by `AI_MODE` env variable:
 | `/courses` | Course catalog (search, filter) |
 | `/courses/[slug]` | Course detail + enrollment |
 | `/tutor` | AI Tutor chat (RAG, governance metadata) |
+| `/sessions` | Class sessions list + join/attendance |
 | `/dashboard/admin` | Admin analytics dashboard |
 | `/dashboard/instructor` | Instructor course dashboard |
 | `/dashboard/student` | Student progress dashboard |
+
+---
+
+## Documentation
+
+| File | Description |
+|------|-------------|
+| `docs/ARCHITECTURE.md` | System architecture & module layout |
+| `docs/DEPLOYMENT.md` | Docker deployment guide |
+| `docs/DEVELOPMENT.md` | Development setup & workflow |
+| `docs/CHANGELOG.md` | Version history |
+| `docs/TROUBLESHOOTING.md` | Common issues & fixes |
+| `docs/DATA_DICTIONARY.md` | Database schema & entity definitions |
+| `docs/API_REFERENCE.md` | Full API endpoint reference |
+| `docs/TESTING.md` | Test strategy & coverage |
 
 ---
 
