@@ -175,7 +175,7 @@ switch ($Action) {
     }
 
     "db-seed" {
-        Remote "docker compose exec api npx ts-node prisma/seed.ts"
+        Remote "docker compose exec api npx prisma db seed"
     }
 
     "shell" {
