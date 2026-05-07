@@ -15,10 +15,11 @@ RUN npx prisma generate
 # Copy source code
 COPY src ./src
 
-# Build with explicit verification
-RUN npx nest build && ls -la dist/
+# Build
+RUN npx nest build
 
 EXPOSE 4000
 
 # Run migrations on start, then start the app
-CMD ["sh", "-c", "npx prisma migrate deploy 2>/dev/null; node dist/main.js"]
+# NestJS outputs to dist/src/main.js because tsconfig includes both src/ and prisma/
+CMD ["sh", "-c", "npx prisma migrate deploy 2>/dev/null; node dist/src/main.js"]
