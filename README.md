@@ -151,21 +151,24 @@ The AI Gateway runs in two modes controlled by `AI_MODE` env variable:
 | Mode | Description |
 |------|-------------|
 | `mock` | Returns realistic mock data. No external calls. Default. |
-| `external_api` | Routes to `AI_SERVICES_BASE_URL` (future GPU server) or OpenRouter |
+| `external_api` | Routes to OpenRouter API for real AI responses |
+
+**Note:** When using `external_api` mode, set `OPENROUTER_API_KEY` in `.env`. All AI calls go through OpenRouter only (per AGENT_RUNBOOK.md). Model names are OpenRouter slugs read from env vars.
 
 ### Available AI Endpoints
 
-| Endpoint | Description |
-|----------|-------------|
-| `POST /v1/rag/query` | RAG-based Q&A |
-| `POST /v1/class-sessions/{id}/summarize` | Summarize class recording |
-| `POST /v1/class-sessions/{id}/extract-concepts` | Extract key concepts |
-| `POST /v1/class-sessions/{id}/generate-quiz` | Generate quiz from class |
-| `POST /v1/assessment/grade-draft` | AI grading draft |
-| `POST /v1/assessment/plagiarism-similarity` | Plagiarism check |
-| `POST /v1/learning-risk/predict` | Student risk prediction |
-| `POST /v1/asr/jobs` | Speech-to-text job |
-| `POST /v1/embeddings/batch` | Text embeddings |
+| Endpoint | Mock | External | Description |
+|----------|------|----------|-------------|
+| `POST /v1/rag/query` | ✅ | ✅ | RAG-based Q&A |
+| `POST /v1/class-sessions/{id}/summarize` | ✅ | ✅ | Summarize class |
+| `POST /v1/class-sessions/{id}/extract-concepts` | ✅ | ✅ | Extract concepts |
+| `POST /v1/class-sessions/{id}/generate-quiz` | ✅ | ✅ | Generate quiz |
+| `POST /v1/class-sessions/{id}/analyze` | ✅ | ✅ | Full analysis |
+| `POST /v1/assessment/grade-draft` | ✅ | ✅ | AI grading draft |
+| `POST /v1/assessment/plagiarism-similarity` | ✅ | — | Plagiarism check |
+| `POST /v1/learning-risk/predict` | ✅ | ✅ | Risk prediction |
+| `POST /v1/asr/jobs` | ✅ | — | Speech-to-text |
+| `POST /v1/embeddings/batch` | ✅ | — | Text embeddings |
 
 ---
 

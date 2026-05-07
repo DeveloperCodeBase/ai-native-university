@@ -2,6 +2,25 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2.2.0] - 2026-05-07
+
+### Added — Phase 3: OpenRouter Integration
+- `openrouter_client.py` — Async OpenRouter client for AI Gateway
+- All AI routers now support dual-mode: `mock` (default) and `external_api` (OpenRouter)
+- RAG query calls OpenRouter with Persian system prompt when `AI_MODE=external_api`
+- Class analysis (summarize, concepts, quiz, analyze) calls OpenRouter in external_api mode
+- Assessment grading calls OpenRouter with rubric-aware prompting
+- Risk prediction calls OpenRouter with educational context
+
+### Added — Tests
+- `tests/test_endpoints.py` — 15 tests covering all AI Gateway endpoints in mock mode
+- Tests verify correlation ID middleware, AI governance flags, response structure
+- pytest added to requirements
+
+### Changed
+- All AI routers refactored to separate mock and OpenRouter logic cleanly
+- Assessment plagiarism check remains mock-only (needs embedding DB)
+
 ## [2.1.0] - 2026-05-07
 
 ### Added — Phase 2: Core University Domain API

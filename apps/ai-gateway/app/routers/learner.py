@@ -1,9 +1,12 @@
-"""Learner profile and risk prediction endpoints."""
+"""Learner profile and risk prediction endpoints.
+Supports mock and external_api modes."""
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 import uuid
+
+from app.config import settings
 
 router = APIRouter()
 
@@ -34,6 +37,50 @@ class RiskPredictResponse(BaseModel):
     provider: str = "mock"
 
 
+def _mock_risk() -> RiskPredictResponse:
+    return RiskPredictResponse(
+        job_id=f"risk_{uuid.uuid4().hex[:8]}",
+        risk_score=0.35,
+        risk_level="medium",
+        factors=["حضور نامنظم در کلاس‌های اخیر", "تأخیر در تحویل تکلیف"],
+        recommendations=["پیشنهاد جلسه مشاوره تحصیلی", "ارسال یادآوری تکالیف"],
+        confidence=0.72,
+        human_review_required=True,
+    )
+
+
+async def _openrouter_risk(request: RiskPredictRequest) -> RiskPredictResponse:
+    from app.openrouter_client import openrouter_client
+    try:
+        result = await openrouter_client.chat_completion(
+            messages=[{"role": "user", "content": f"بر اساس داده‌های دانشجو {request.user_id} در درس {request.course_id or 'نامشخص'}، ریسک افت تحصیلی را تحلیل کن. عوامل ریسک و توصیه‌ها را فارسی بنویس."}],
+            system_prompt="تو یک تحلیل‌گر آموزشی هستی. ریسک افت تحصیلی دانشجو را ارزیابی کن. خروجی شامل: سطح ریسک (low/medium/high)، عوامل ریسک و توصیه‌ها. این تحلیل حتماً نیاز به بازبینی انسانی دارد.",
+            temperature=0.4,
+        )
+        # Parse risk level from response
+        answer = result["answer"].lower()
+        if "high" in answer or "بالا" in answer:
+            risk_level, risk_score = "high", 0.75
+        elif "low" in answer or "پایین" in answer:
+            risk_level, risk_score = "low", 0.20
+        else:
+            risk_level, risk_score = "medium", 0.45
+
+        return RiskPredictResponse(
+            job_id=f"risk_{uuid.uuid4().hex[:8]}",
+            risk_score=risk_score,
+            risk_level=risk_level,
+            factors=[result["answer"][:200]],
+            recommendations=["بررسی توسط مشاور تحصیلی توصیه می‌شود"],
+            confidence=result["confidence"],
+            human_review_required=True,
+            model=result["model"],
+            provider=result["provider"],
+        )
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"OpenRouter call failed: {str(e)}")
+
+
 @router.post("/learner-profile/update")
 async def update_learner_profile(request: LearnerProfileUpdate):
     return {
@@ -45,22 +92,10 @@ async def update_learner_profile(request: LearnerProfileUpdate):
 
 @router.post("/learning-risk/predict", response_model=RiskPredictResponse)
 async def predict_risk(request: RiskPredictRequest):
-    return RiskPredictResponse(
-        job_id=f"risk_{uuid.uuid4().hex[:8]}",
-        status="completed",
-        risk_score=0.35,
-        risk_level="medium",
-        factors=[
-            "حضور نامنظم در کلاس‌های اخیر",
-            "تأخیر در تحویل تکلیف",
-        ],
-        recommendations=[
-            "پیشنهاد جلسه مشاوره تحصیلی",
-            "ارسال یادآوری تکالیف",
-        ],
-        confidence=0.72,
-        human_review_required=True,
-    )
+    """Risk prediction. Always requires human review."""
+    if settings.ai_mode == "external_api":
+        return await _openrouter_risk(request)
+    return _mock_risk()
 
 
 @router.post("/recommendations/next-actions")
