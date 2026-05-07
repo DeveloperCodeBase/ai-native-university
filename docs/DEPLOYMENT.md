@@ -1,116 +1,84 @@
 # Deployment Guide
 
-## Server
+## Server Requirements
 
-- IP: 193.163.201.141
-- SSH alias: my-vps
-- User: ubuntu
-- Project path: /var/www/ai-native-university
-- Public URL: http://193.163.201.141:3010
+- Ubuntu 22.04+ VPS
+- Docker & Docker Compose v2
+- Git
+- 4GB+ RAM recommended
+- No GPU required (AI runs in mock mode or via external API)
 
-## Deploy
+## Server Info
 
-From Windows PowerShell:
+- SSH alias: `my-vps`
+- IP: `193.163.201.141`
+- Remote path: `/var/www/ai-native-university`
+- Public URL: `http://193.163.201.141:3010`
+
+## Deployment Workflow
+
+All deployment commands run from Windows via `scripts/remote.ps1`:
 
 ```powershell
+# First-time setup
+.\scripts\remote.ps1 bootstrap-server
+
+# Deploy (build + start)
 .\scripts\remote.ps1 up
-```
 
-## Restart
-
-```powershell
-.\scripts\remote.ps1 restart
-```
-
-## Clean Rebuild
-
-```powershell
-.\scripts\remote.ps1 rebuild-clean
-```
-
-## View Logs
-
-```powershell
-.\scripts\remote.ps1 logs
-```
-
-## Live Logs
-
-```powershell
-.\scripts\remote.ps1 logs-live
-```
-
-## Full Check
-
-```powershell
+# Full deploy with health check
 .\scripts\remote.ps1 full-check
+
+# Run database migration
+.\scripts\remote.ps1 db-migrate
+
+# Seed demo data
+.\scripts\remote.ps1 db-seed
+
+# View logs
+.\scripts\remote.ps1 logs
+
+# Check health
+.\scripts\remote.ps1 health
+
+# Check AI health
+.\scripts\remote.ps1 ai-health
 ```
 
-## Run Tests
+## Environment Variables
 
-```powershell
-.\scripts\remote.ps1 test
-```
-
-Tests run inside the Docker container against the live server using Node.js built-in test runner.
-
-## Environment File
-
-The real `.env` file lives only on the server and must not be committed to GitHub.
-
-If `.env` is missing, it can be created from `.env.example`:
+The `.env` file exists only on the VPS. Create it from `.env.example`:
 
 ```powershell
 .\scripts\remote.ps1 env-create
 ```
 
-After creation, secrets must be reviewed manually on the server.
+### Required Variables
 
-## OpenRouter Setup
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `POSTGRES_USER` | Database user | `ainu` |
+| `POSTGRES_PASSWORD` | Database password | `ainu_secret` |
+| `POSTGRES_DB` | Database name | `ainu_db` |
+| `REDIS_PASSWORD` | Redis password | `ainu_redis_secret` |
+| `JWT_SECRET` | JWT signing secret (32+ chars) | change-me |
+| `AI_MODE` | `mock` or `external_api` | `mock` |
+| `OPENROUTER_API_KEY` | OpenRouter API key | empty |
+| `OPENROUTER_BASE_URL` | OpenRouter base URL | `https://openrouter.ai/api/v1` |
+| `EXTERNAL_PORT` | Public port | `3010` |
 
-The Ubuntu VPS `.env` file must contain:
+## Ports
 
-```env
-OPENROUTER_API_KEY=sk-or-...
-OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
-OPENROUTER_DEFAULT_MODEL=openai/gpt-5.3-codex
-OPENROUTER_FAST_MODEL=openai/gpt-5.3-codex
-OPENROUTER_REASONING_MODEL=openai/gpt-5.3-codex
-OPENROUTER_HTTP_REFERER=http://193.163.201.141:3010
-OPENROUTER_X_TITLE=AI Native University
-```
+| Port | Service | Exposed |
+|------|---------|---------|
+| 3010 | nginx (public) | Yes |
+| 3000 | web (internal) | Docker only |
+| 4000 | api (internal) | Docker only |
+| 8000 | ai-gateway (internal) | Docker only |
+| 5432 | postgres (internal) | Docker only |
+| 6379 | redis (internal) | Docker only |
+| 9000 | minio (internal) | Docker only |
 
-Never commit the real OpenRouter API key.
+## Troubleshooting
 
-If AI calls fail:
-
-1. Check `.env` on the server.
-2. Check `OPENROUTER_API_KEY`.
-3. Check model slugs.
-4. Run:
-
-```powershell
-.\scripts\remote.ps1 logs
-.\scripts\remote.ps1 diagnose
-```
-
-## Docker Configuration
-
-Container mapping: host port 3010 → container port 3000.
-
-The Dockerfile uses `npm ci --omit=dev` for reproducible production builds.
-
-## Exposed Endpoints
-
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | / | Frontend SPA |
-| GET | /health | Health check |
-| GET | /api/ai-health | AI health (OpenRouter) |
-| POST | /api/chat | Basic chat |
-| GET | /api/courses | Course list |
-| GET | /api/courses/:id | Course detail |
-| GET | /api/courses/:id/lessons/:lid | Lesson content |
-| GET | /api/courses/:id/lessons/:lid/quiz | Quiz questions |
-| POST | /api/quiz/evaluate | Quiz grading |
-| POST | /api/tutor/chat | AI tutor chat |
+See [TROUBLESHOOTING.md](./TROUBLESHOOTING.md).

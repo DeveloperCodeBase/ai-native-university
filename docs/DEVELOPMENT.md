@@ -1,110 +1,99 @@
 # Development Guide
 
-## Main Rule
+## Prerequisites
 
-Code is edited locally on Windows, but runtime and testing must be executed on the Ubuntu VPS.
+- Node.js ≥ 20
+- pnpm ≥ 9
+- Docker & Docker Compose
+- Python 3.12+ (for AI Gateway local dev)
 
-## Project Structure
+## Local Setup
 
-```text
-ai-native-university/
-├── server.js                 # Express server entry point
-├── package.json
-├── Dockerfile
-├── docker-compose.yml
-├── public/                   # Static frontend (served by Express)
-│   ├── index.html            # SPA shell
-│   ├── css/styles.css        # Design system
-│   └── js/app.js             # Client SPA router and logic
-├── src/
-│   ├── data/
-│   │   ├── courses.js        # Course catalog data
-│   │   └── quizzes.js        # Quiz data per lesson
-│   ├── lib/
-│   │   └── openrouter.js     # OpenRouter API client
-│   └── routes/
-│       ├── courses.js        # Course/lesson API routes
-│       ├── tutor.js          # AI tutor chat routes
-│       └── quiz.js           # Quiz evaluation routes
-├── tests/
-│   └── api.test.js           # API endpoint tests
-├── scripts/
-│   └── remote.ps1            # Remote deployment script
-└── docs/                     # Documentation
+```bash
+# Clone
+git clone <repo-url> ai-native-university
+cd ai-native-university
+
+# Copy environment
+cp .env.example .env
+
+# Install deps
+pnpm install
+
+# Generate Prisma client
+cd apps/api && npx prisma generate && cd ../..
 ```
 
-## Common Commands
+## Running Locally
 
-From Windows PowerShell in the project root:
+### Option 1: Infrastructure in Docker + Apps local
 
-```powershell
-.\scripts\remote.ps1 status
-.\scripts\remote.ps1 up
-.\scripts\remote.ps1 logs
-.\scripts\remote.ps1 test
-.\scripts\remote.ps1 diagnose
-.\scripts\remote.ps1 health
-.\scripts\remote.ps1 ai-health
-.\scripts\remote.ps1 full-check
+```bash
+# Start DB + Redis + MinIO
+docker compose up postgres redis minio -d
+
+# API (terminal 1)
+cd apps/api && npx nest start --watch
+
+# Web (terminal 2)
+cd apps/web && npx next dev
+
+# AI Gateway (terminal 3)
+cd apps/ai-gateway && uvicorn app.main:app --reload --port 8000
 ```
 
-## Development Cycle
+### Option 2: Everything in Docker
 
-1. Edit code locally.
-2. Update documentation if behavior, setup, API, env, architecture, or commands changed.
-3. Run:
-
-```powershell
-.\scripts\remote.ps1 full-check
+```bash
+docker compose up --build
 ```
 
-4. Inspect output and logs.
-5. If AI code changed, run:
+Access at http://localhost:3010
 
-```powershell
-.\scripts\remote.ps1 ai-health
+## Database
+
+```bash
+# Create migration
+cd apps/api && npx prisma migrate dev --name <name>
+
+# Apply migrations
+cd apps/api && npx prisma migrate deploy
+
+# Seed data
+cd apps/api && npx ts-node prisma/seed.ts
+
+# Open Prisma Studio
+cd apps/api && npx prisma studio
 ```
 
-6. Fix errors locally.
-7. Repeat until successful.
+## Demo Credentials
 
-## Adding a New Course
+Password for all: `Demo@1234`
+Tenant slug: `demo-university`
 
-1. Add course object to `src/data/courses.js` with `id`, `title`, `description`, `category`, `difficulty`, `icon`, `color`, `estimatedHours`, and `lessons[]`.
-2. Add quiz data for each lesson in `src/data/quizzes.js`.
-3. The frontend and API will automatically pick up the new course.
+| Role | Email |
+|------|-------|
+| Super Admin | superadmin@demo.university.ir |
+| Admin | admin@demo.university.ir |
+| Instructor | instructor@demo.university.ir |
+| Student | student@demo.university.ir |
 
-## Adding a New API Endpoint
+## Code Structure
 
-1. Create or modify route file in `src/routes/`.
-2. Mount the router in `server.js`.
-3. Add tests in `tests/api.test.js`.
-4. Update API documentation in README.md.
+```
+apps/api/src/
+├── auth/           # JWT auth, guards, decorators
+├── audit/          # Audit logging
+├── tenant/         # Tenant CRUD
+├── user/           # User management
+├── health/         # Health checks
+├── prisma/         # Prisma service
+└── main.ts         # Bootstrap
+```
 
-## AI Development Rules
+## AI Provider Rule
 
-When implementing AI features:
-
-1. Use only OpenRouter.
-2. Read API key from `OPENROUTER_API_KEY`.
-3. Read base URL from `OPENROUTER_BASE_URL`.
-4. Read model slugs from:
-   - `OPENROUTER_DEFAULT_MODEL`
-   - `OPENROUTER_FAST_MODEL`
-   - `OPENROUTER_REASONING_MODEL`
-5. Never hardcode secrets.
-6. Never introduce provider-specific API keys.
-7. Update `.env.example` and README.md when AI configuration changes.
-
-## Documentation Rule
-
-Every implementation change must update relevant documentation:
-
-- README.md
-- AGENT_RUNBOOK.md
-- .env.example
-- docs/ARCHITECTURE.md
-- docs/DEVELOPMENT.md
-- docs/DEPLOYMENT.md
-- docs/TROUBLESHOOTING.md
-- docs/CHANGELOG.md
+All AI model usage must use OpenRouter only:
+- `OPENROUTER_API_KEY` — your OpenRouter key
+- `OPENROUTER_BASE_URL=https://openrouter.ai/api/v1`
+- Model slugs from OpenRouter catalog

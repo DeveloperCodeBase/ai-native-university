@@ -21,6 +21,8 @@ param(
         "diagnose",
         "docs-check",
         "full-check",
+        "db-migrate",
+        "db-seed",
         "shell"
     )]
     [string]$Action
@@ -29,8 +31,8 @@ param(
 $Server = "my-vps"
 $ProjectPath = "/var/www/ai-native-university"
 $Branch = "main"
-$HealthUrl = "http://193.163.201.141:3010/health"
-$AiHealthUrl = "http://193.163.201.141:3010/api/ai-health"
+$HealthUrl = "http://193.163.201.141:3010/api/health/simple"
+$AiHealthUrl = "http://193.163.201.141:3010/ai/health"
 
 function Remote($cmd) {
     ssh $Server "cd $ProjectPath && $cmd"
@@ -110,7 +112,7 @@ switch ($Action) {
 
     "test" {
         Push-Code
-        Remote "git pull origin $Branch && if [ ! -f .env ] && [ -f .env.example ]; then cp .env.example .env && chmod 600 .env; fi && docker compose up -d --build && sleep 5 && docker compose exec app node --test tests/api.test.js"
+        Remote "git pull origin $Branch && if [ ! -f .env ] && [ -f .env.example ]; then cp .env.example .env && chmod 600 .env; fi && docker compose up -d --build && sleep 10 && echo '--- API health ---' && curl -sf http://localhost:4000/api/health/simple || echo 'API health FAILED' && echo '--- AI Gateway health ---' && curl -sf http://localhost:8000/v1/health || echo 'AI Gateway health FAILED'"
     }
 
     "status" {
@@ -119,7 +121,9 @@ switch ($Action) {
 
     "health" {
         try {
-            Invoke-WebRequest -Uri $HealthUrl -UseBasicParsing -TimeoutSec 20
+            $response = Invoke-WebRequest -Uri $HealthUrl -UseBasicParsing -TimeoutSec 20
+            Write-Host "Health check passed: $($response.StatusCode)"
+            Write-Host $response.Content
         } catch {
             Write-Host "Health check failed:"
             Write-Host $_
@@ -129,7 +133,9 @@ switch ($Action) {
 
     "ai-health" {
         try {
-            Invoke-WebRequest -Uri $AiHealthUrl -UseBasicParsing -TimeoutSec 60
+            $response = Invoke-WebRequest -Uri $AiHealthUrl -UseBasicParsing -TimeoutSec 60
+            Write-Host "AI health check passed: $($response.StatusCode)"
+            Write-Host $response.Content
         } catch {
             Write-Host "AI health check failed:"
             Write-Host $_
@@ -151,8 +157,8 @@ switch ($Action) {
 
     "full-check" {
         Push-Code
-        Remote "git pull origin $Branch && if [ ! -f .env ] && [ -f .env.example ]; then cp .env.example .env && chmod 600 .env; fi && docker compose up -d --build && sleep 5 && docker compose logs --tail=150"
-        Start-Sleep -Seconds 3
+        Remote "git pull origin $Branch && if [ ! -f .env ] && [ -f .env.example ]; then cp .env.example .env && chmod 600 .env; fi && docker compose up -d --build && sleep 15 && docker compose logs --tail=200"
+        Start-Sleep -Seconds 5
         try {
             $response = Invoke-WebRequest -Uri $HealthUrl -UseBasicParsing -TimeoutSec 30
             Write-Host "Health check passed: $($response.StatusCode)"
@@ -162,6 +168,14 @@ switch ($Action) {
             Write-Host $_
             exit 1
         }
+    }
+
+    "db-migrate" {
+        Remote "docker compose exec api npx prisma migrate deploy"
+    }
+
+    "db-seed" {
+        Remote "docker compose exec api npx ts-node prisma/seed.ts"
     }
 
     "shell" {

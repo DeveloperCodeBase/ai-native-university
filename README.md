@@ -1,326 +1,199 @@
-# AI Native University
+# 🎓 AI-Native Online University Platform
 
-AI Native University is an AI-powered learning platform where users can browse courses on AI, prompt engineering, and machine learning, read in-depth lessons, take AI-graded quizzes, and chat with a context-aware AI tutor.
+> **نسل جدید آموزش عالی آنلاین مبتنی بر هوش مصنوعی**
 
-Built locally on Windows with Google Antigravity. Deployed on Ubuntu VPS via Docker.
+[![Architecture](https://img.shields.io/badge/Architecture-Monorepo-blue)]()
+[![Stack](https://img.shields.io/badge/Stack-Next.js%20%7C%20NestJS%20%7C%20FastAPI-purple)]()
+[![AI Mode](https://img.shields.io/badge/AI-Mock%20%7C%20External-green)]()
+[![License](https://img.shields.io/badge/License-Private-red)]()
 
-## Features
+---
 
-- 📚 **3 Expert Courses** — Introduction to AI, Prompt Engineering, ML Fundamentals
-- 📖 **9 In-Depth Lessons** — Full markdown educational content
-- 📝 **Interactive Quizzes** — Multiple-choice and AI-graded free-text questions
-- 🤖 **AI Tutor** — Context-aware chat that adapts to your current course and lesson
-- 🎨 **Premium UI** — Dark theme with glassmorphism, animations, and responsive design
-- 🔒 **OpenRouter Only** — All AI calls routed through OpenRouter gateway
+## Overview
 
-## Runtime Architecture
+A production-grade **AI-Native** online university platform where AI is the core learning infrastructure — not an add-on. Features adaptive learning, live classes, intelligent assessment, and cognitive learner profiling.
 
-```text
-Windows Laptop + Google Antigravity
-        ↓
-Git commit / push
-        ↓
-GitHub Repository
-        ↓
-Ubuntu VPS git pull
-        ↓
-Docker Compose build / run / test
-        ↓
-Logs / health checks
-        ↓
-Code fixes on Windows
+### Key Capabilities
+
+| Feature | Description |
+|---------|-------------|
+| 🤖 **AI Tutor** | RAG-based Q&A from course materials |
+| 🎥 **Live Classes** | Session management, recording, attendance |
+| 📊 **Learning Analytics** | Risk prediction, progress tracking |
+| 📝 **Smart Assessment** | AI-assisted grading with human review |
+| 🏛️ **University Management** | Faculty, department, program, course structure |
+| 🔒 **Multi-Tenant** | Complete data isolation per organization |
+| 🌐 **Persian RTL** | First-class Persian/RTL support |
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────┐
+│                   nginx (:3010)                  │
+│        /  → web  │  /api → api  │  /ai → gateway│
+├─────────────────────────────────────────────────┤
+│  web (Next.js)  │  api (NestJS)  │  ai-gateway  │
+│    :3000        │    :4000       │  (FastAPI)    │
+│                 │                │    :8000      │
+├─────────────────────────────────────────────────┤
+│  PostgreSQL 16  │  Redis 7  │  MinIO (S3)       │
+│    :5432        │   :6379   │   :9000            │
+└─────────────────────────────────────────────────┘
 ```
 
-## Important Rules
+### Monorepo Structure
 
-Do not run production Docker commands directly on Windows.
+```
+ai-native-university/
+├── apps/
+│   ├── web/          # Next.js 15 — Frontend (RTL)
+│   ├── api/          # NestJS — Backend API
+│   └── ai-gateway/   # FastAPI — AI Service Gateway
+├── packages/
+│   ├── types/        # Shared TypeScript types
+│   ├── ui/           # Shared UI components
+│   └── config/       # Shared configurations
+├── infra/
+│   └── nginx/        # Reverse proxy config
+├── docs/             # Documentation
+├── _archive/         # Archived MVP code
+├── docker-compose.yml
+├── pnpm-workspace.yaml
+├── turbo.json
+└── AGENTS.md
+```
 
-All runtime, tests, logs, Docker builds, and deployment must run on the Ubuntu VPS through:
+---
+
+## Quick Start
+
+### Prerequisites
+
+- **Node.js** ≥ 20
+- **pnpm** ≥ 9
+- **Docker** & **Docker Compose**
+- **Python** 3.12+ (for ai-gateway local dev)
+
+### 1. Clone & Setup
+
+```bash
+git clone <repo-url> ai-native-university
+cd ai-native-university
+cp .env.example .env
+# Edit .env with your values
+```
+
+### 2. Install Dependencies
+
+```bash
+pnpm install
+```
+
+### 3. Run with Docker Compose
+
+```bash
+docker compose up --build
+```
+
+### 4. Access
+
+| Service | URL |
+|---------|-----|
+| 🌐 Web App | http://localhost:3010 |
+| 📚 API Swagger | http://localhost:3010/api/docs |
+| 🤖 AI Gateway Docs | http://localhost:3010/ai/docs |
+| 💾 MinIO Console | http://localhost:9001 |
+
+### 5. Run Database Migration
+
+```bash
+docker compose exec api npx prisma migrate deploy
+docker compose exec api npx prisma db seed
+```
+
+---
+
+## Development
+
+### Local Development (without Docker)
+
+```bash
+# Terminal 1 — Start infrastructure
+docker compose up postgres redis minio -d
+
+# Terminal 2 — API
+cd apps/api && pnpm dev
+
+# Terminal 3 — Web
+cd apps/web && pnpm dev
+
+# Terminal 4 — AI Gateway
+cd apps/ai-gateway && uvicorn app.main:app --reload --port 8000
+```
+
+### Useful Commands
+
+```bash
+pnpm dev          # Start all apps in dev mode (via Turborepo)
+pnpm build        # Build all apps
+pnpm lint         # Lint all apps
+pnpm test         # Run all tests
+```
+
+---
+
+## AI Gateway
+
+The AI Gateway runs in two modes controlled by `AI_MODE` env variable:
+
+| Mode | Description |
+|------|-------------|
+| `mock` | Returns realistic mock data. No external calls. Default. |
+| `external_api` | Routes to `AI_SERVICES_BASE_URL` (future GPU server) or OpenRouter |
+
+### Available AI Endpoints
+
+| Endpoint | Description |
+|----------|-------------|
+| `POST /v1/rag/query` | RAG-based Q&A |
+| `POST /v1/class-sessions/{id}/summarize` | Summarize class recording |
+| `POST /v1/class-sessions/{id}/extract-concepts` | Extract key concepts |
+| `POST /v1/class-sessions/{id}/generate-quiz` | Generate quiz from class |
+| `POST /v1/assessment/grade-draft` | AI grading draft |
+| `POST /v1/assessment/plagiarism-similarity` | Plagiarism check |
+| `POST /v1/learning-risk/predict` | Student risk prediction |
+| `POST /v1/asr/jobs` | Speech-to-text job |
+| `POST /v1/embeddings/batch` | Text embeddings |
+
+---
+
+## VPS Deployment
+
+Per `AGENT_RUNBOOK.md`, deploy via:
 
 ```powershell
 .\scripts\remote.ps1
 ```
 
-Do not use direct AI provider APIs. All AI calls must go through OpenRouter only.
+---
 
-Forbidden direct provider keys:
+## Tech Stack
 
-- `OPENAI_API_KEY`
-- `ANTHROPIC_API_KEY`
-- `GEMINI_API_KEY`
-- `GOOGLE_API_KEY`
-- `GROQ_API_KEY`
-- `TOGETHER_API_KEY`
-- `MISTRAL_API_KEY`
-- `COHERE_API_KEY`
+| Layer | Technology |
+|-------|-----------|
+| Frontend | Next.js 15, React 19, CSS Modules |
+| Backend | NestJS 11, Prisma 6, PostgreSQL 16 |
+| AI Gateway | FastAPI, Pydantic, httpx |
+| Queue | Redis + BullMQ |
+| Storage | MinIO (S3-compatible) |
+| Proxy | Nginx |
+| Container | Docker Compose |
+| Monorepo | pnpm workspaces + Turborepo |
 
-Allowed AI variables:
+---
 
-```env
-OPENROUTER_API_KEY=
-OPENROUTER_BASE_URL=https://openrouter.ai/api/v1
-OPENROUTER_DEFAULT_MODEL=openai/gpt-5.3-codex
-OPENROUTER_FAST_MODEL=openai/gpt-5.3-codex
-OPENROUTER_REASONING_MODEL=openai/gpt-5.3-codex
-```
+## License
 
-## Server
-
-- VPS IP: `193.163.201.141`
-- SSH alias: `my-vps`
-- User: `ubuntu`
-- Remote path: `/var/www/ai-native-university`
-- Public test URL: `http://193.163.201.141:3010`
-- Health URL: `http://193.163.201.141:3010/health`
-- AI health URL: `http://193.163.201.141:3010/api/ai-health`
-
-## Requirements
-
-### Windows
-
-- Git
-- OpenSSH Client
-- PowerShell
-- Google Antigravity
-- Access to the GitHub repository
-
-### Ubuntu VPS
-
-- Git
-- Docker
-- Docker Compose
-- SSH access
-- GitHub Deploy Key
-
-## Setup on Windows
-
-Clone the repository:
-
-```powershell
-git clone git@github.com:DeveloperCodeBase/ai-native-university.git
-cd ai-native-university
-```
-
-Check remote server status:
-
-```powershell
-.\scripts\remote.ps1 status
-```
-
-Bootstrap server files and `.env`:
-
-```powershell
-.\scripts\remote.ps1 bootstrap-server
-```
-
-Deploy:
-
-```powershell
-.\scripts\remote.ps1 up
-```
-
-View logs:
-
-```powershell
-.\scripts\remote.ps1 logs
-```
-
-Run tests:
-
-```powershell
-.\scripts\remote.ps1 test
-```
-
-Run full check:
-
-```powershell
-.\scripts\remote.ps1 full-check
-```
-
-Run AI health check:
-
-```powershell
-.\scripts\remote.ps1 ai-health
-```
-
-## Setup on Ubuntu VPS
-
-Project path:
-
-```bash
-cd /var/www/ai-native-university
-```
-
-Pull latest code:
-
-```bash
-git pull origin main
-```
-
-Create `.env` from `.env.example` if needed:
-
-```bash
-cp .env.example .env
-chmod 600 .env
-```
-
-Run Docker Compose:
-
-```bash
-docker compose up -d --build
-```
-
-View logs:
-
-```bash
-docker compose logs --tail=200
-```
-
-## Environment Variables
-
-The real `.env` file must exist only on the server and must never be committed.
-
-Template file:
-
-```text
-.env.example
-```
-
-If environment variables change, update:
-
-- `.env.example`
-- `README.md`
-- `docs/DEPLOYMENT.md`
-
-## API Endpoints
-
-### Health
-
-```text
-GET /health
-```
-
-### AI Health (OpenRouter)
-
-```text
-GET /api/ai-health
-```
-
-### Course Catalog
-
-```text
-GET /api/courses
-```
-
-### Course Detail
-
-```text
-GET /api/courses/:id
-```
-
-### Lesson Content
-
-```text
-GET /api/courses/:id/lessons/:lessonId
-```
-
-### Quiz Questions
-
-```text
-GET /api/courses/:id/lessons/:lessonId/quiz
-```
-
-### Quiz Evaluation
-
-```text
-POST /api/quiz/evaluate
-Content-Type: application/json
-
-{
-  "courseId": "intro-to-ai",
-  "lessonId": "what-is-ai",
-  "answers": [
-    { "id": "q1", "answer": 0 },
-    { "id": "q3", "answer": "Narrow AI handles specific tasks while AGI would handle any task." }
-  ]
-}
-```
-
-### AI Tutor Chat
-
-```text
-POST /api/tutor/chat
-Content-Type: application/json
-
-{
-  "message": "Explain backpropagation",
-  "courseId": "ml-fundamentals",
-  "lessonId": "neural-networks",
-  "history": []
-}
-```
-
-### Basic Chat
-
-```text
-POST /api/chat
-Content-Type: application/json
-
-{
-  "message": "Hello"
-}
-```
-
-## Documentation
-
-Documentation must be updated with every meaningful implementation change.
-
-Main documentation files:
-
-- `README.md`
-- `AGENT_RUNBOOK.md`
-- `docs/ARCHITECTURE.md`
-- `docs/DEVELOPMENT.md`
-- `docs/DEPLOYMENT.md`
-- `docs/TROUBLESHOOTING.md`
-- `docs/CHANGELOG.md`
-
-## Agent Workflow
-
-Google Antigravity must follow this workflow:
-
-1. Read `AGENT_RUNBOOK.md`.
-2. Edit code locally on Windows.
-3. Update documentation.
-4. Commit and push changes.
-5. Run remote deploy/test through `scripts/remote.ps1`.
-6. Inspect logs and health checks.
-7. Fix errors locally.
-8. Repeat until successful.
-
-## Useful Commands
-
-```powershell
-.\scripts\remote.ps1 status
-.\scripts\remote.ps1 bootstrap-server
-.\scripts\remote.ps1 env-check
-.\scripts\remote.ps1 env-create
-.\scripts\remote.ps1 up
-.\scripts\remote.ps1 restart
-.\scripts\remote.ps1 rebuild-clean
-.\scripts\remote.ps1 logs
-.\scripts\remote.ps1 logs-live
-.\scripts\remote.ps1 test
-.\scripts\remote.ps1 diagnose
-.\scripts\remote.ps1 health
-.\scripts\remote.ps1 ai-health
-.\scripts\remote.ps1 full-check
-```
-
-## Troubleshooting
-
-See:
-
-```text
-docs/TROUBLESHOOTING.md
-```
+Private — All rights reserved.

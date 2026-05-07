@@ -1,27 +1,50 @@
+# Dependencies
 node_modules/
-.env
-.env.*
-!.env.example
+.pnpm-store/
 
-.next/
-.nuxt/
+# Build outputs
 dist/
-build/
-coverage/
+.next/
+.turbo/
+out/
 
-.DS_Store
+# Environment
+.env
+.env.local
+.env.production
+.env*.local
+
+# IDE
 .vscode/
 .idea/
+*.swp
+*.swo
 
+# OS
+.DS_Store
+Thumbs.db
+
+# Prisma
+apps/api/prisma/migrations/**/migration_lock.toml
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+*.egg-info/
+
+# Docker
 *.log
-npm-debug.log*
-yarn-debug.log*
-pnpm-debug.log*
 
-storage/
-tmp/
-logs/
+# Test coverage
+coverage/
+.nyc_output/
 
-docker-data/
-postgres-data/
-redis-data/
+# Archive (keep but ignore from editors)
+# _archive/
+
+# Lock files (keep pnpm-lock.yaml)
+package-lock.json
+yarn.lock

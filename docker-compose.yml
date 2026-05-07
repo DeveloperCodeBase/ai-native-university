@@ -1,12 +1,124 @@
+# AI-Native Online University — Docker Compose
+# Services: web, api, ai-gateway, postgres, redis, minio, nginx
+
 services:
-  app:
-    build: .
-    container_name: ai-native-university-app
+  # --- Infrastructure ---
+  postgres:
+    image: postgres:16-alpine
+    container_name: ainu-postgres
     restart: unless-stopped
-    ports:
-      - "3010:3000"
-    env_file:
-      - .env
     environment:
-      - NODE_ENV=production
-      - PORT=3000
+      POSTGRES_USER: ${POSTGRES_USER:-ainu}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-ainu_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-ainu_db}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ainu}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: ainu-redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-ainu_redis_secret}
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-ainu_redis_secret}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: ainu-minio
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-ainu_minio}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-ainu_minio_secret}
+    volumes:
+      - minio_data:/data
+
+  # --- Application Services ---
+  api:
+    build:
+      context: ./apps/api
+      dockerfile: Dockerfile
+    container_name: ainu-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: "4000"
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ainu}:${POSTGRES_PASSWORD:-ainu_secret}@postgres:5432/${POSTGRES_DB:-ainu_db}?schema=public
+      REDIS_URL: redis://:${REDIS_PASSWORD:-ainu_redis_secret}@redis:6379
+      JWT_SECRET: ${JWT_SECRET:-change-me-jwt-secret-must-be-32-chars}
+      JWT_EXPIRATION_SECONDS: ${JWT_EXPIRATION_SECONDS:-86400}
+      JWT_REFRESH_EXPIRATION_SECONDS: ${JWT_REFRESH_EXPIRATION_SECONDS:-604800}
+      AI_GATEWAY_URL: http://ai-gateway:8000
+      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:-change-me-gateway-key}
+      MINIO_ENDPOINT: minio
+      MINIO_PORT: "9000"
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-ainu_minio}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-ainu_minio_secret}
+      CORS_ORIGIN: ${CORS_ORIGIN:-*}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+    ports:
+      - "4000:4000"
+
+  ai-gateway:
+    build:
+      context: ./apps/ai-gateway
+      dockerfile: Dockerfile
+    container_name: ainu-ai-gateway
+    restart: unless-stopped
+    environment:
+      AI_MODE: ${AI_MODE:-mock}
+      AI_SERVICES_BASE_URL: ${AI_SERVICES_BASE_URL:-https://future-gpu-server.example.com}
+      AI_SERVICES_API_KEY: ${AI_SERVICES_API_KEY:-change-me}
+      AI_GATEWAY_API_KEY: ${AI_GATEWAY_API_KEY:-change-me-gateway-key}
+      OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
+      OPENROUTER_BASE_URL: ${OPENROUTER_BASE_URL:-https://openrouter.ai/api/v1}
+      OPENROUTER_DEFAULT_MODEL: ${OPENROUTER_DEFAULT_MODEL:-openai/gpt-4o-mini}
+    ports:
+      - "8000:8000"
+
+  web:
+    build:
+      context: ./apps/web
+      dockerfile: Dockerfile
+    container_name: ainu-web
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_URL: /api
+      NEXT_PUBLIC_AI_GATEWAY_URL: /ai
+    ports:
+      - "3000:3000"
+
+  # --- Reverse Proxy ---
+  nginx:
+    image: nginx:alpine
+    container_name: ainu-nginx
+    restart: unless-stopped
+    depends_on:
+      - web
+      - api
+      - ai-gateway
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "${EXTERNAL_PORT:-3010}:80"
+
+volumes:
+  postgres_data:
+  redis_data:
+  minio_data:

@@ -1,0 +1,471 @@
+// =============================================================
+// AI-Native Online University — Prisma Schema
+// =============================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- Tenant & Organization ---
+
+model Tenant {
+  id          String       @id @default(uuid())
+  name        String
+  slug        String       @unique
+  domain      String?
+  plan        String       @default("free")
+  locale      String       @default("fa")
+  aiPolicy    Json?
+  status      String       @default("active") // active, suspended, trial
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  users       User[]
+  faculties   Faculty[]
+  courses     Course[]
+  enrollments Enrollment[]
+  classSessions ClassSession[]
+  assessments   Assessment[]
+  learningEvents LearningEvent[]
+  aiInteractionLogs AiInteractionLog[]
+  certificates Certificate[]
+
+  @@map("tenants")
+}
+
+// --- User & Auth ---
+
+model User {
+  id            String   @id @default(uuid())
+  tenantId      String
+  email         String
+  passwordHash  String
+  fullName      String
+  phone         String?
+  role          String   @default("student") // super_admin, admin, instructor, student, teaching_assistant
+  locale        String   @default("fa")
+  isActive      Boolean  @default(true)
+  lastLoginAt   DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  enrollments   Enrollment[]
+  attendances   Attendance[]
+  submissions   Submission[]
+  learningEvents LearningEvent[]
+  aiInteractionLogs AiInteractionLog[]
+  certificates  Certificate[]
+  instructorCourses CourseInstructor[]
+  chatMessages  ChatMessage[]
+
+  @@unique([tenantId, email])
+  @@index([tenantId])
+  @@map("users")
+}
+
+model AuditLog {
+  id            String   @id @default(uuid())
+  tenantId      String
+  actorId       String
+  action        String
+  resource      String
+  resourceId    String?
+  oldValue      Json?
+  newValue      Json?
+  ipAddress     String?
+  correlationId String?
+  createdAt     DateTime @default(now())
+
+  @@index([tenantId, createdAt])
+  @@index([actorId])
+  @@map("audit_logs")
+}
+
+// --- Academic Structure ---
+
+model Faculty {
+  id          String       @id @default(uuid())
+  tenantId    String
+  name        String
+  slug        String
+  description String?
+  isActive    Boolean      @default(true)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+  departments Department[]
+
+  @@unique([tenantId, slug])
+  @@map("faculties")
+}
+
+model Department {
+  id          String    @id @default(uuid())
+  facultyId   String
+  name        String
+  slug        String
+  description String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  faculty     Faculty   @relation(fields: [facultyId], references: [id])
+  programs    Program[]
+
+  @@map("departments")
+}
+
+model Program {
+  id            String   @id @default(uuid())
+  departmentId  String
+  name          String
+  slug          String
+  description   String?
+  level         String?  // bachelor, master, phd, certificate
+  durationTerms Int      @default(8)
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  department    Department @relation(fields: [departmentId], references: [id])
+  courses       Course[]
+
+  @@map("programs")
+}
+
+// --- Course & Content ---
+
+model Course {
+  id            String         @id @default(uuid())
+  tenantId      String
+  programId     String?
+  title         String
+  slug          String
+  description   String?
+  level         String?        // beginner, intermediate, advanced
+  language      String         @default("fa")
+  status        String         @default("draft") // draft, published, archived
+  version       Int            @default(1)
+  thumbnailUrl  String?
+  createdBy     String?
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  program       Program?       @relation(fields: [programId], references: [id])
+  modules       CourseModule[]
+  enrollments   Enrollment[]
+  instructors   CourseInstructor[]
+  classSessions ClassSession[]
+  assessments   Assessment[]
+
+  @@unique([tenantId, slug])
+  @@index([tenantId, status])
+  @@map("courses")
+}
+
+model CourseInstructor {
+  id        String   @id @default(uuid())
+  courseId   String
+  userId    String
+  role      String   @default("primary") // primary, assistant
+  createdAt DateTime @default(now())
+
+  course    Course   @relation(fields: [courseId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([courseId, userId])
+  @@map("course_instructors")
+}
+
+model CourseModule {
+  id          String   @id @default(uuid())
+  courseId     String
+  title       String
+  slug        String
+  description String?
+  sortOrder   Int      @default(0)
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  course      Course   @relation(fields: [courseId], references: [id])
+  lessons     Lesson[]
+
+  @@map("course_modules")
+}
+
+model Lesson {
+  id            String       @id @default(uuid())
+  moduleId      String
+  title         String
+  slug          String
+  content       String?      // markdown content
+  contentType   String       @default("text") // text, video, interactive
+  videoUrl      String?
+  transcriptUrl String?
+  aiSummary     String?
+  sortOrder     Int          @default(0)
+  durationMin   Int?
+  isPublished   Boolean      @default(false)
+  releaseAt     DateTime?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  module        CourseModule @relation(fields: [moduleId], references: [id])
+
+  @@map("lessons")
+}
+
+// --- Enrollment ---
+
+model Enrollment {
+  id         String   @id @default(uuid())
+  tenantId   String
+  userId     String
+  courseId    String
+  status     String   @default("active") // pending, active, completed, dropped, waitlisted
+  progress   Float    @default(0) // 0-100
+  enrolledAt DateTime @default(now())
+  completedAt DateTime?
+  droppedAt  DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tenant     Tenant   @relation(fields: [tenantId], references: [id])
+  user       User     @relation(fields: [userId], references: [id])
+  course     Course   @relation(fields: [courseId], references: [id])
+
+  @@unique([userId, courseId])
+  @@index([tenantId])
+  @@map("enrollments")
+}
+
+// --- Live Class ---
+
+model ClassSession {
+  id              String       @id @default(uuid())
+  tenantId        String
+  courseId         String
+  title           String
+  description     String?
+  status          String       @default("scheduled") // scheduled, live, ended, cancelled
+  scheduledStart  DateTime
+  scheduledEnd    DateTime
+  actualStart     DateTime?
+  actualEnd       DateTime?
+  roomId          String?
+  joinUrl         String?
+  maxParticipants Int          @default(100)
+  createdBy       String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  tenant          Tenant       @relation(fields: [tenantId], references: [id])
+  course          Course       @relation(fields: [courseId], references: [id])
+  attendances     Attendance[]
+  recordings      Recording[]
+  chatMessages    ChatMessage[]
+
+  @@index([tenantId, scheduledStart])
+  @@map("class_sessions")
+}
+
+model Attendance {
+  id             String       @id @default(uuid())
+  classSessionId String
+  userId         String
+  joinedAt       DateTime     @default(now())
+  leftAt         DateTime?
+  durationMin    Int?
+
+  classSession   ClassSession @relation(fields: [classSessionId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@unique([classSessionId, userId])
+  @@map("attendances")
+}
+
+model ChatMessage {
+  id             String       @id @default(uuid())
+  classSessionId String
+  userId         String
+  content        String
+  createdAt      DateTime     @default(now())
+
+  classSession   ClassSession @relation(fields: [classSessionId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+
+  @@index([classSessionId, createdAt])
+  @@map("chat_messages")
+}
+
+model Recording {
+  id             String       @id @default(uuid())
+  classSessionId String
+  storageUrl     String?
+  mediaType      String       @default("video") // video, audio
+  status         String       @default("pending") // pending, processing, ready, failed
+  durationSec    Int?
+  sizeBytes      BigInt?
+  transcriptUrl  String?
+  aiSummary      String?
+  aiConcepts     Json?
+  aiQuiz         Json?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  classSession   ClassSession @relation(fields: [classSessionId], references: [id])
+
+  @@map("recordings")
+}
+
+// --- Assessment ---
+
+model Assessment {
+  id            String       @id @default(uuid())
+  tenantId      String
+  courseId       String
+  title         String
+  description   String?
+  type          String       @default("quiz") // quiz, assignment, exam, project
+  totalPoints   Float        @default(100)
+  passingScore  Float?
+  timeLimit     Int?         // minutes
+  isPublished   Boolean      @default(false)
+  dueDate       DateTime?
+  createdBy     String?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  tenant        Tenant       @relation(fields: [tenantId], references: [id])
+  course        Course       @relation(fields: [courseId], references: [id])
+  questions     Question[]
+  submissions   Submission[]
+
+  @@index([tenantId, courseId])
+  @@map("assessments")
+}
+
+model Question {
+  id            String     @id @default(uuid())
+  assessmentId  String
+  type          String     @default("multiple_choice") // multiple_choice, true_false, short_answer, essay
+  stem          String     // The question text
+  choices       Json?      // For MCQ: [{id, text, isCorrect}]
+  correctAnswer String?    // For short answer
+  points        Float      @default(1)
+  difficulty    String?    // easy, medium, hard
+  sortOrder     Int        @default(0)
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+
+  assessment    Assessment @relation(fields: [assessmentId], references: [id])
+
+  @@map("questions")
+}
+
+model Submission {
+  id            String     @id @default(uuid())
+  assessmentId  String
+  userId        String
+  attemptNo     Int        @default(1)
+  answers       Json?      // [{questionId, answer}]
+  score         Float?
+  aiDraftScore  Float?
+  feedback      String?
+  aiFeedback    String?
+  status        String     @default("submitted") // submitted, grading, graded, returned
+  submittedAt   DateTime   @default(now())
+  gradedAt      DateTime?
+  gradedBy      String?
+  humanReviewRequired Boolean @default(false)
+
+  assessment    Assessment @relation(fields: [assessmentId], references: [id])
+  user          User       @relation(fields: [userId], references: [id])
+
+  @@index([assessmentId, userId])
+  @@map("submissions")
+}
+
+// --- Certificate ---
+
+model Certificate {
+  id              String   @id @default(uuid())
+  tenantId        String
+  userId          String
+  courseId         String?
+  title           String
+  description     String?
+  badgeJson       Json?
+  verificationUrl String?
+  issuedAt        DateTime @default(now())
+  expiresAt       DateTime?
+  revokedAt       DateTime?
+  createdAt       DateTime @default(now())
+
+  tenant          Tenant   @relation(fields: [tenantId], references: [id])
+  user            User     @relation(fields: [userId], references: [id])
+
+  @@map("certificates")
+}
+
+// --- Analytics ---
+
+model LearningEvent {
+  id            String   @id @default(uuid())
+  tenantId      String
+  actorId       String
+  eventType     String   // course_opened, lesson_completed, quiz_submitted, etc.
+  objectId      String?
+  objectType    String?
+  courseId       String?
+  lessonId      String?
+  classSessionId String?
+  context       Json?
+  correlationId String?
+  timestamp     DateTime @default(now())
+
+  tenant        Tenant   @relation(fields: [tenantId], references: [id])
+  actor         User     @relation(fields: [actorId], references: [id])
+
+  @@index([tenantId, eventType, timestamp])
+  @@index([actorId, timestamp])
+  @@map("learning_events")
+}
+
+// --- AI Interaction Log ---
+
+model AiInteractionLog {
+  id                String   @id @default(uuid())
+  tenantId          String
+  userId            String
+  taskType          String   // rag_query, summarize, generate_quiz, grade_draft, etc.
+  courseId           String?
+  classSessionId     String?
+  model             String?
+  provider          String?
+  promptVersion     String?
+  inputSummary      String?
+  outputSummary     String?
+  confidence        Float?
+  humanReviewRequired Boolean @default(false)
+  riskClass         String?  // low, medium, high
+  latencyMs         Int?
+  tokenUsage        Json?
+  correlationId     String?
+  createdAt         DateTime @default(now())
+
+  tenant            Tenant   @relation(fields: [tenantId], references: [id])
+  user              User     @relation(fields: [userId], references: [id])
+
+  @@index([tenantId, taskType, createdAt])
+  @@map("ai_interaction_logs")
+}
