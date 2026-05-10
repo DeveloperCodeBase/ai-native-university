@@ -202,4 +202,54 @@ export class CourseController {
       data: await this.courseService.assignInstructor(tenantId, courseId, userId, role || 'primary'),
     };
   }
+
+  // --- Content Versioning ---
+
+  @Post(':courseId/versions')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'instructor')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'ایجاد نسخه جدید از درس' })
+  async createNewVersion(
+    @CurrentUser('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('courseId') courseId: string,
+  ) {
+    return {
+      success: true,
+      data: await this.courseService.createNewVersion(tenantId, courseId, userId),
+    };
+  }
+
+  @Get(':courseId/versions')
+  @UseGuards(JwtAuthGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'لیست نسخه‌های درس' })
+  async getCourseVersions(
+    @CurrentUser('tenantId') tenantId: string,
+    @Param('courseId') courseId: string,
+  ) {
+    return {
+      success: true,
+      data: await this.courseService.getCourseVersions(tenantId, courseId),
+    };
+  }
+
+  @Post(':courseId/versions/:targetVersionId/revert')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles('admin', 'instructor')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'بازگشت به نسخه قبلی درس' })
+  async revertToVersion(
+    @CurrentUser('tenantId') tenantId: string,
+    @CurrentUser('sub') userId: string,
+    @Param('courseId') courseId: string,
+    @Param('targetVersionId') targetVersionId: string,
+  ) {
+    return {
+      success: true,
+      data: await this.courseService.revertToVersion(tenantId, courseId, targetVersionId, userId),
+    };
+  }
 }
+

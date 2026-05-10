@@ -14,6 +14,8 @@ import { ClassSessionModule } from './class-session/class-session.module';
 import { AssessmentModule } from './assessment/assessment.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { AiModule } from './ai/ai.module';
+import { NotificationModule } from './notification/notification.module';
+import { CommunityModule } from './community/community.module';
 
 @Module({
   imports: [
@@ -34,6 +36,8 @@ import { AiModule } from './ai/ai.module';
     AssessmentModule,
     AnalyticsModule,
     AiModule,
+    NotificationModule,
+    CommunityModule,
   ],
   controllers: [HealthController],
 })

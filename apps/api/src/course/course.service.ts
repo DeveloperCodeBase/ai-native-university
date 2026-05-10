@@ -256,4 +256,133 @@ export class CourseService {
       create: { courseId, userId, role },
     });
   }
+
+  // --- Content Versioning ---
+
+  async createNewVersion(tenantId: string, courseId: string, userId: string) {
+    const course = await this.prisma.course.findFirst({
+      where: { id: courseId, tenantId },
+      include: {
+        modules: {
+          include: { lessons: true },
+        },
+      },
+    });
+    if (!course) {
+      throw new NotFoundException('درس یافت نشد');
+    }
+
+    const parentId = course.parentCourseId || course.id;
+    const newVersion = course.version + 1;
+    const newSlug = `${course.slug}-v${newVersion}`;
+
+    // Mark current version as not latest
+    await this.prisma.course.update({
+      where: { id: courseId },
+      data: { isLatestVersion: false },
+    });
+
+    // Clone course with new version
+    const newCourse = await this.prisma.course.create({
+      data: {
+        tenantId,
+        programId: course.programId,
+        parentCourseId: parentId,
+        title: course.title,
+        slug: newSlug,
+        description: course.description,
+        level: course.level,
+        language: course.language,
+        status: 'draft',
+        version: newVersion,
+        isLatestVersion: true,
+        thumbnailUrl: course.thumbnailUrl,
+        createdBy: userId,
+      },
+    });
+
+    // Clone modules and lessons
+    for (const mod of course.modules) {
+      const newModule = await this.prisma.courseModule.create({
+        data: {
+          courseId: newCourse.id,
+          title: mod.title,
+          slug: mod.slug,
+          description: mod.description,
+          sortOrder: mod.sortOrder,
+          isPublished: false,
+        },
+      });
+      for (const lesson of mod.lessons) {
+        await this.prisma.lesson.create({
+          data: {
+            moduleId: newModule.id,
+            title: lesson.title,
+            slug: lesson.slug,
+            content: lesson.content,
+            contentType: lesson.contentType,
+            videoUrl: lesson.videoUrl,
+            transcriptUrl: lesson.transcriptUrl,
+            aiSummary: lesson.aiSummary,
+            sortOrder: lesson.sortOrder,
+            durationMin: lesson.durationMin,
+            isPublished: false,
+          },
+        });
+      }
+    }
+
+    return this.prisma.course.findFirst({
+      where: { id: newCourse.id },
+      include: {
+        _count: { select: { modules: true } },
+      },
+    });
+  }
+
+  async getCourseVersions(tenantId: string, courseId: string) {
+    const course = await this.prisma.course.findFirst({
+      where: { id: courseId, tenantId },
+    });
+    if (!course) {
+      throw new NotFoundException('درس یافت نشد');
+    }
+
+    const parentId = course.parentCourseId || course.id;
+
+    return this.prisma.course.findMany({
+      where: {
+        tenantId,
+        OR: [
+          { id: parentId },
+          { parentCourseId: parentId },
+        ],
+      },
+      orderBy: { version: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        version: true,
+        isLatestVersion: true,
+        status: true,
+        createdAt: true,
+        createdBy: true,
+      },
+    });
+  }
+
+  async revertToVersion(tenantId: string, courseId: string, targetVersionId: string, userId: string) {
+    // Get the target version
+    const targetVersion = await this.prisma.course.findFirst({
+      where: { id: targetVersionId, tenantId },
+    });
+    if (!targetVersion) {
+      throw new NotFoundException('نسخه مورد نظر یافت نشد');
+    }
+
+    // Create a new version based on the target
+    return this.createNewVersion(tenantId, targetVersionId, userId);
+  }
 }
+

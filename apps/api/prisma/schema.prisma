@@ -34,6 +34,8 @@ model Tenant {
   learningEvents LearningEvent[]
   aiInteractionLogs AiInteractionLog[]
   certificates Certificate[]
+  notifications Notification[]
+  forumThreads ForumThread[]
 
   @@map("tenants")
 }
@@ -63,6 +65,10 @@ model User {
   certificates  Certificate[]
   instructorCourses CourseInstructor[]
   chatMessages  ChatMessage[]
+  notifications Notification[]
+  forumThreads  ForumThread[]
+  forumReplies  ForumReply[]
+  forumLikes    ForumLike[]
 
   @@unique([tenantId, email])
   @@index([tenantId])
@@ -143,28 +149,31 @@ model Program {
 // --- Course & Content ---
 
 model Course {
-  id            String         @id @default(uuid())
-  tenantId      String
-  programId     String?
-  title         String
-  slug          String
-  description   String?
-  level         String?        // beginner, intermediate, advanced
-  language      String         @default("fa")
-  status        String         @default("draft") // draft, published, archived
-  version       Int            @default(1)
-  thumbnailUrl  String?
-  createdBy     String?
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  id              String         @id @default(uuid())
+  tenantId        String
+  programId       String?
+  parentCourseId  String?        // for version chain — points to first version
+  title           String
+  slug            String
+  description     String?
+  level           String?        // beginner, intermediate, advanced
+  language        String         @default("fa")
+  status          String         @default("draft") // draft, published, archived
+  version         Int            @default(1)
+  isLatestVersion Boolean        @default(true)
+  thumbnailUrl    String?
+  createdBy       String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
 
-  tenant        Tenant         @relation(fields: [tenantId], references: [id])
-  program       Program?       @relation(fields: [programId], references: [id])
-  modules       CourseModule[]
-  enrollments   Enrollment[]
-  instructors   CourseInstructor[]
-  classSessions ClassSession[]
-  assessments   Assessment[]
+  tenant          Tenant         @relation(fields: [tenantId], references: [id])
+  program         Program?       @relation(fields: [programId], references: [id])
+  modules         CourseModule[]
+  enrollments     Enrollment[]
+  instructors     CourseInstructor[]
+  classSessions   ClassSession[]
+  assessments     Assessment[]
+  forumThreads    ForumThread[]
 
   @@unique([tenantId, slug])
   @@index([tenantId, status])
@@ -468,4 +477,80 @@ model AiInteractionLog {
 
   @@index([tenantId, taskType, createdAt])
   @@map("ai_interaction_logs")
+}
+
+// --- Notifications ---
+
+model Notification {
+  id          String   @id @default(uuid())
+  tenantId    String
+  userId      String
+  type        String   // enrollment, grade, class_starting, assignment_due, system, ai_review
+  title       String
+  body        String?
+  isRead      Boolean  @default(false)
+  metadata    Json?    // extra payload: courseId, assessmentId, etc.
+  createdAt   DateTime @default(now())
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id])
+  user        User     @relation(fields: [userId], references: [id])
+
+  @@index([userId, isRead, createdAt])
+  @@index([tenantId])
+  @@map("notifications")
+}
+
+// --- Community & Forum ---
+
+model ForumThread {
+  id          String       @id @default(uuid())
+  tenantId    String
+  courseId    String
+  authorId    String
+  title       String
+  body        String
+  isPinned    Boolean      @default(false)
+  isLocked    Boolean      @default(false)
+  replyCount  Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  tenant      Tenant       @relation(fields: [tenantId], references: [id])
+  course      Course       @relation(fields: [courseId], references: [id])
+  author      User         @relation(fields: [authorId], references: [id])
+  replies     ForumReply[]
+
+  @@index([tenantId, courseId, createdAt])
+  @@map("forum_threads")
+}
+
+model ForumReply {
+  id          String       @id @default(uuid())
+  threadId    String
+  authorId    String
+  body        String
+  isAnswer    Boolean      @default(false)
+  likeCount   Int          @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  thread      ForumThread  @relation(fields: [threadId], references: [id])
+  author      User         @relation(fields: [authorId], references: [id])
+  likes       ForumLike[]
+
+  @@index([threadId, createdAt])
+  @@map("forum_replies")
+}
+
+model ForumLike {
+  id        String     @id @default(uuid())
+  replyId   String
+  userId    String
+  createdAt DateTime   @default(now())
+
+  reply     ForumReply @relation(fields: [replyId], references: [id])
+  user      User       @relation(fields: [userId], references: [id])
+
+  @@unique([replyId, userId])
+  @@map("forum_likes")
 }

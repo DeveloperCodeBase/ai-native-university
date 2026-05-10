@@ -244,6 +244,165 @@ async function main() {
   });
   console.log(`  ✅ Enrollments created`);
 
+  // --- Class Sessions ---
+  const now = new Date();
+  const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+  const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+  const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
+  const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+
+  const session1 = await prisma.classSession.create({
+    data: {
+      tenantId: tenant.id,
+      courseId: course1.id,
+      title: 'جلسه اول: معرفی هوش مصنوعی',
+      description: 'آشنایی با مفاهیم پایه و تاریخچه هوش مصنوعی',
+      scheduledAt: twoDaysAgo,
+      endedAt: new Date(twoDaysAgo.getTime() + 90 * 60 * 1000),
+      status: 'ended',
+      meetingUrl: 'https://meet.example.com/session-1',
+    },
+  });
+
+  const session2 = await prisma.classSession.create({
+    data: {
+      tenantId: tenant.id,
+      courseId: course1.id,
+      title: 'جلسه دوم: یادگیری ماشین',
+      description: 'بررسی الگوریتم‌های یادگیری ماشین و کاربردها',
+      scheduledAt: yesterday,
+      endedAt: new Date(yesterday.getTime() + 90 * 60 * 1000),
+      status: 'ended',
+      meetingUrl: 'https://meet.example.com/session-2',
+    },
+  });
+
+  const session3 = await prisma.classSession.create({
+    data: {
+      tenantId: tenant.id,
+      courseId: course1.id,
+      title: 'جلسه سوم: شبکه‌های عصبی',
+      description: 'مقدمه‌ای بر شبکه‌های عصبی و یادگیری عمیق',
+      scheduledAt: tomorrow,
+      status: 'scheduled',
+      meetingUrl: 'https://meet.example.com/session-3',
+    },
+  });
+  console.log(`  ✅ Class sessions: ${session1.title}, ${session2.title}, ${session3.title}`);
+
+  // --- Attendance ---
+  await prisma.attendance.createMany({
+    data: [
+      { sessionId: session1.id, userId: student.id, joinedAt: twoDaysAgo, leftAt: new Date(twoDaysAgo.getTime() + 85 * 60 * 1000), durationMin: 85 },
+      { sessionId: session1.id, userId: student2.id, joinedAt: twoDaysAgo, leftAt: new Date(twoDaysAgo.getTime() + 90 * 60 * 1000), durationMin: 90 },
+      { sessionId: session2.id, userId: student.id, joinedAt: yesterday, leftAt: new Date(yesterday.getTime() + 80 * 60 * 1000), durationMin: 80 },
+    ],
+    skipDuplicates: true,
+  });
+  console.log(`  ✅ Attendance records created`);
+
+  // --- Recordings ---
+  await prisma.recording.create({
+    data: {
+      sessionId: session1.id,
+      url: 'https://storage.example.com/recordings/session-1.mp4',
+      durationMin: 90,
+      sizeBytes: BigInt(524288000),
+      format: 'mp4',
+    },
+  });
+  console.log(`  ✅ Recording added to session 1`);
+
+  // --- Assessments ---
+  const assessment1 = await prisma.assessment.create({
+    data: {
+      tenantId: tenant.id,
+      courseId: course1.id,
+      title: 'آزمون میان‌ترم: مبانی هوش مصنوعی',
+      type: 'quiz',
+      dueDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
+      maxScore: 100,
+      passingScore: 60,
+      status: 'published',
+      aiGradingEnabled: true,
+    },
+  });
+
+  await prisma.question.createMany({
+    data: [
+      {
+        assessmentId: assessment1.id,
+        text: 'هوش مصنوعی قوی (AGI) به چه معناست؟',
+        type: 'multiple_choice',
+        options: JSON.stringify(['سیستمی با توانایی درک و یادگیری همه وظایف شناختی انسان', 'سیستمی با قدرت محاسباتی بالا', 'یک ربات انسان‌نما', 'یک الگوریتم ریاضی ساده']),
+        correctAnswer: 'سیستمی با توانایی درک و یادگیری همه وظایف شناختی انسان',
+        points: 25,
+        sortOrder: 1,
+      },
+      {
+        assessmentId: assessment1.id,
+        text: 'Overfitting چه زمانی رخ می‌دهد؟',
+        type: 'multiple_choice',
+        options: JSON.stringify(['وقتی مدل روی داده آموزشی بیش از حد یاد می‌گیرد', 'وقتی داده کم است', 'وقتی مدل ساده است', 'وقتی validation خوب است']),
+        correctAnswer: 'وقتی مدل روی داده آموزشی بیش از حد یاد می‌گیرد',
+        points: 25,
+        sortOrder: 2,
+      },
+      {
+        assessmentId: assessment1.id,
+        text: 'آزمون تورینگ توسط چه کسی و در چه سالی پیشنهاد شد؟',
+        type: 'short_answer',
+        correctAnswer: 'آلن تورینگ در سال ۱۹۵۰',
+        points: 25,
+        sortOrder: 3,
+      },
+      {
+        assessmentId: assessment1.id,
+        text: 'مزایا و معایب یادگیری عمیق را در مقایسه با یادگیری ماشین سنتی توضیح دهید.',
+        type: 'essay',
+        correctAnswer: '',
+        points: 25,
+        sortOrder: 4,
+      },
+    ],
+    skipDuplicates: true,
+  });
+  console.log(`  ✅ Assessment with ${4} questions created`);
+
+  // --- Learning Events ---
+  await prisma.learningEvent.createMany({
+    data: [
+      { tenantId: tenant.id, actorId: student.id, eventType: 'course_opened', resourceType: 'course', resourceId: course1.id },
+      { tenantId: tenant.id, actorId: student.id, eventType: 'lesson_opened', resourceType: 'lesson', resourceId: 'lesson_1' },
+      { tenantId: tenant.id, actorId: student.id, eventType: 'lesson_completed', resourceType: 'lesson', resourceId: 'lesson_1' },
+      { tenantId: tenant.id, actorId: student.id, eventType: 'class_joined', resourceType: 'class_session', resourceId: session1.id },
+      { tenantId: tenant.id, actorId: student.id, eventType: 'class_left', resourceType: 'class_session', resourceId: session1.id },
+      { tenantId: tenant.id, actorId: student.id, eventType: 'ai_tutor_asked', resourceType: 'course', resourceId: course1.id, metadata: JSON.stringify({ query: 'هوش مصنوعی چیست؟' }) },
+      { tenantId: tenant.id, actorId: student2.id, eventType: 'course_opened', resourceType: 'course', resourceId: course1.id },
+      { tenantId: tenant.id, actorId: student2.id, eventType: 'class_joined', resourceType: 'class_session', resourceId: session1.id },
+    ],
+    skipDuplicates: true,
+  });
+  console.log(`  ✅ Learning events created`);
+
+  // --- AI Interaction Log ---
+  await prisma.aiInteractionLog.create({
+    data: {
+      tenantId: tenant.id,
+      userId: student.id,
+      correlationId: 'seed_corr_001',
+      interactionType: 'rag_query',
+      inputSummary: 'هوش مصنوعی چیست؟',
+      outputSummary: 'هوش مصنوعی شاخه‌ای از علوم کامپیوتر است...',
+      model: 'mock-model',
+      provider: 'mock',
+      confidence: 0.85,
+      latencyMs: 150,
+      humanReviewRequired: false,
+    },
+  });
+  console.log(`  ✅ AI interaction log created`);
+
   console.log('\n🎉 Seed completed successfully!');
   console.log('\n📋 Demo credentials (password: Demo@1234):');
   console.log('   Super Admin:  superadmin@demo.university.ir');
