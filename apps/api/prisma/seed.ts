@@ -257,7 +257,7 @@ async function main() {
       courseId: course1.id,
       title: 'جلسه اول: معرفی هوش مصنوعی',
       description: 'آشنایی با مفاهیم پایه و تاریخچه هوش مصنوعی',
-      scheduledAt: twoDaysAgo,
+      scheduledStart: twoDaysAgo,
       endedAt: new Date(twoDaysAgo.getTime() + 90 * 60 * 1000),
       status: 'ended',
       meetingUrl: 'https://meet.example.com/session-1',
@@ -270,7 +270,7 @@ async function main() {
       courseId: course1.id,
       title: 'جلسه دوم: یادگیری ماشین',
       description: 'بررسی الگوریتم‌های یادگیری ماشین و کاربردها',
-      scheduledAt: yesterday,
+      scheduledStart: yesterday,
       endedAt: new Date(yesterday.getTime() + 90 * 60 * 1000),
       status: 'ended',
       meetingUrl: 'https://meet.example.com/session-2',
@@ -283,7 +283,7 @@ async function main() {
       courseId: course1.id,
       title: 'جلسه سوم: شبکه‌های عصبی',
       description: 'مقدمه‌ای بر شبکه‌های عصبی و یادگیری عمیق',
-      scheduledAt: tomorrow,
+      scheduledStart: tomorrow,
       status: 'scheduled',
       meetingUrl: 'https://meet.example.com/session-3',
     },
@@ -293,9 +293,9 @@ async function main() {
   // --- Attendance ---
   await prisma.attendance.createMany({
     data: [
-      { sessionId: session1.id, userId: student.id, joinedAt: twoDaysAgo, leftAt: new Date(twoDaysAgo.getTime() + 85 * 60 * 1000), durationMin: 85 },
-      { sessionId: session1.id, userId: student2.id, joinedAt: twoDaysAgo, leftAt: new Date(twoDaysAgo.getTime() + 90 * 60 * 1000), durationMin: 90 },
-      { sessionId: session2.id, userId: student.id, joinedAt: yesterday, leftAt: new Date(yesterday.getTime() + 80 * 60 * 1000), durationMin: 80 },
+      { classSessionId: session1.id, userId: student.id, joinedAt: twoDaysAgo, leftAt: new Date(twoDaysAgo.getTime() + 85 * 60 * 1000), durationMin: 85 },
+      { classSessionId: session1.id, userId: student2.id, joinedAt: twoDaysAgo, leftAt: new Date(twoDaysAgo.getTime() + 90 * 60 * 1000), durationMin: 90 },
+      { classSessionId: session2.id, userId: student.id, joinedAt: yesterday, leftAt: new Date(yesterday.getTime() + 80 * 60 * 1000), durationMin: 80 },
     ],
     skipDuplicates: true,
   });
@@ -304,7 +304,7 @@ async function main() {
   // --- Recordings ---
   await prisma.recording.create({
     data: {
-      sessionId: session1.id,
+      classSessionId: session1.id,
       url: 'https://storage.example.com/recordings/session-1.mp4',
       durationMin: 90,
       sizeBytes: BigInt(524288000),
@@ -321,7 +321,7 @@ async function main() {
       title: 'آزمون میان‌ترم: مبانی هوش مصنوعی',
       type: 'quiz',
       dueDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
-      maxScore: 100,
+      totalPoints: 100,
       passingScore: 60,
       status: 'published',
       aiGradingEnabled: true,
@@ -332,7 +332,7 @@ async function main() {
     data: [
       {
         assessmentId: assessment1.id,
-        text: 'هوش مصنوعی قوی (AGI) به چه معناست؟',
+        stem: 'هوش مصنوعی قوی (AGI) به چه معناست؟',
         type: 'multiple_choice',
         options: JSON.stringify(['سیستمی با توانایی درک و یادگیری همه وظایف شناختی انسان', 'سیستمی با قدرت محاسباتی بالا', 'یک ربات انسان‌نما', 'یک الگوریتم ریاضی ساده']),
         correctAnswer: 'سیستمی با توانایی درک و یادگیری همه وظایف شناختی انسان',
@@ -341,7 +341,7 @@ async function main() {
       },
       {
         assessmentId: assessment1.id,
-        text: 'Overfitting چه زمانی رخ می‌دهد؟',
+        stem: 'Overfitting چه زمانی رخ می‌دهد؟',
         type: 'multiple_choice',
         options: JSON.stringify(['وقتی مدل روی داده آموزشی بیش از حد یاد می‌گیرد', 'وقتی داده کم است', 'وقتی مدل ساده است', 'وقتی validation خوب است']),
         correctAnswer: 'وقتی مدل روی داده آموزشی بیش از حد یاد می‌گیرد',
@@ -350,7 +350,7 @@ async function main() {
       },
       {
         assessmentId: assessment1.id,
-        text: 'آزمون تورینگ توسط چه کسی و در چه سالی پیشنهاد شد؟',
+        stem: 'آزمون تورینگ توسط چه کسی و در چه سالی پیشنهاد شد؟',
         type: 'short_answer',
         correctAnswer: 'آلن تورینگ در سال ۱۹۵۰',
         points: 25,
@@ -358,7 +358,7 @@ async function main() {
       },
       {
         assessmentId: assessment1.id,
-        text: 'مزایا و معایب یادگیری عمیق را در مقایسه با یادگیری ماشین سنتی توضیح دهید.',
+        stem: 'مزایا و معایب یادگیری عمیق را در مقایسه با یادگیری ماشین سنتی توضیح دهید.',
         type: 'essay',
         correctAnswer: '',
         points: 25,
@@ -372,14 +372,14 @@ async function main() {
   // --- Learning Events ---
   await prisma.learningEvent.createMany({
     data: [
-      { tenantId: tenant.id, actorId: student.id, eventType: 'course_opened', resourceType: 'course', resourceId: course1.id },
-      { tenantId: tenant.id, actorId: student.id, eventType: 'lesson_opened', resourceType: 'lesson', resourceId: 'lesson_1' },
-      { tenantId: tenant.id, actorId: student.id, eventType: 'lesson_completed', resourceType: 'lesson', resourceId: 'lesson_1' },
-      { tenantId: tenant.id, actorId: student.id, eventType: 'class_joined', resourceType: 'class_session', resourceId: session1.id },
-      { tenantId: tenant.id, actorId: student.id, eventType: 'class_left', resourceType: 'class_session', resourceId: session1.id },
-      { tenantId: tenant.id, actorId: student.id, eventType: 'ai_tutor_asked', resourceType: 'course', resourceId: course1.id, metadata: JSON.stringify({ query: 'هوش مصنوعی چیست؟' }) },
-      { tenantId: tenant.id, actorId: student2.id, eventType: 'course_opened', resourceType: 'course', resourceId: course1.id },
-      { tenantId: tenant.id, actorId: student2.id, eventType: 'class_joined', resourceType: 'class_session', resourceId: session1.id },
+      { tenantId: tenant.id, actorId: student.id, eventType: 'course_opened', courseId: course1.id },
+      { tenantId: tenant.id, actorId: student.id, eventType: 'lesson_opened', lessonId: 'lesson_1' },
+      { tenantId: tenant.id, actorId: student.id, eventType: 'lesson_completed', lessonId: 'lesson_1' },
+      { tenantId: tenant.id, actorId: student.id, eventType: 'class_joined', classSessionId: session1.id },
+      { tenantId: tenant.id, actorId: student.id, eventType: 'class_left', classSessionId: session1.id },
+      { tenantId: tenant.id, actorId: student.id, eventType: 'ai_tutor_asked', courseId: course1.id, context: { query: 'هوش مصنوعی چیست؟' } },
+      { tenantId: tenant.id, actorId: student2.id, eventType: 'course_opened', courseId: course1.id },
+      { tenantId: tenant.id, actorId: student2.id, eventType: 'class_joined', classSessionId: session1.id },
     ],
     skipDuplicates: true,
   });
@@ -391,7 +391,7 @@ async function main() {
       tenantId: tenant.id,
       userId: student.id,
       correlationId: 'seed_corr_001',
-      interactionType: 'rag_query',
+      taskType: 'rag_query',
       inputSummary: 'هوش مصنوعی چیست؟',
       outputSummary: 'هوش مصنوعی شاخه‌ای از علوم کامپیوتر است...',
       model: 'mock-model',
