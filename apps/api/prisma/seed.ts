@@ -246,7 +246,6 @@ async function main() {
 
   // --- Class Sessions ---
   const now = new Date();
-  const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
   const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
   const twoDaysAgo = new Date(now.getTime() - 2 * 24 * 60 * 60 * 1000);
   const tomorrow = new Date(now.getTime() + 24 * 60 * 60 * 1000);
@@ -258,9 +257,7 @@ async function main() {
       title: 'جلسه اول: معرفی هوش مصنوعی',
       description: 'آشنایی با مفاهیم پایه و تاریخچه هوش مصنوعی',
       scheduledStart: twoDaysAgo,
-      endedAt: new Date(twoDaysAgo.getTime() + 90 * 60 * 1000),
       status: 'ended',
-      meetingUrl: 'https://meet.example.com/session-1',
     },
   });
 
@@ -271,9 +268,7 @@ async function main() {
       title: 'جلسه دوم: یادگیری ماشین',
       description: 'بررسی الگوریتم‌های یادگیری ماشین و کاربردها',
       scheduledStart: yesterday,
-      endedAt: new Date(yesterday.getTime() + 90 * 60 * 1000),
       status: 'ended',
-      meetingUrl: 'https://meet.example.com/session-2',
     },
   });
 
@@ -285,7 +280,6 @@ async function main() {
       description: 'مقدمه‌ای بر شبکه‌های عصبی و یادگیری عمیق',
       scheduledStart: tomorrow,
       status: 'scheduled',
-      meetingUrl: 'https://meet.example.com/session-3',
     },
   });
   console.log(`  ✅ Class sessions: ${session1.title}, ${session2.title}, ${session3.title}`);
@@ -305,10 +299,10 @@ async function main() {
   await prisma.recording.create({
     data: {
       classSessionId: session1.id,
-      url: 'https://storage.example.com/recordings/session-1.mp4',
-      durationMin: 90,
+      storageUrl: 'https://storage.example.com/recordings/session-1.mp4',
+      durationSec: 5400,
       sizeBytes: BigInt(524288000),
-      format: 'mp4',
+      mediaType: 'video',
     },
   });
   console.log(`  ✅ Recording added to session 1`);
@@ -323,8 +317,7 @@ async function main() {
       dueDate: new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000),
       totalPoints: 100,
       passingScore: 60,
-      status: 'published',
-      aiGradingEnabled: true,
+      isPublished: true,
     },
   });
 
@@ -334,7 +327,7 @@ async function main() {
         assessmentId: assessment1.id,
         stem: 'هوش مصنوعی قوی (AGI) به چه معناست؟',
         type: 'multiple_choice',
-        options: JSON.stringify(['سیستمی با توانایی درک و یادگیری همه وظایف شناختی انسان', 'سیستمی با قدرت محاسباتی بالا', 'یک ربات انسان‌نما', 'یک الگوریتم ریاضی ساده']),
+        choices: JSON.stringify(['سیستمی با توانایی درک و یادگیری همه وظایف شناختی انسان', 'سیستمی با قدرت محاسباتی بالا', 'یک ربات انسان‌نما', 'یک الگوریتم ریاضی ساده']),
         correctAnswer: 'سیستمی با توانایی درک و یادگیری همه وظایف شناختی انسان',
         points: 25,
         sortOrder: 1,
@@ -343,7 +336,7 @@ async function main() {
         assessmentId: assessment1.id,
         stem: 'Overfitting چه زمانی رخ می‌دهد؟',
         type: 'multiple_choice',
-        options: JSON.stringify(['وقتی مدل روی داده آموزشی بیش از حد یاد می‌گیرد', 'وقتی داده کم است', 'وقتی مدل ساده است', 'وقتی validation خوب است']),
+        choices: JSON.stringify(['وقتی مدل روی داده آموزشی بیش از حد یاد می‌گیرد', 'وقتی داده کم است', 'وقتی مدل ساده است', 'وقتی validation خوب است']),
         correctAnswer: 'وقتی مدل روی داده آموزشی بیش از حد یاد می‌گیرد',
         points: 25,
         sortOrder: 2,
