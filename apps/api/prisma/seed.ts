@@ -257,6 +257,7 @@ async function main() {
       title: 'جلسه اول: معرفی هوش مصنوعی',
       description: 'آشنایی با مفاهیم پایه و تاریخچه هوش مصنوعی',
       scheduledStart: twoDaysAgo,
+      scheduledEnd: new Date(twoDaysAgo.getTime() + 90 * 60 * 1000),
       status: 'ended',
     },
   });
@@ -268,6 +269,7 @@ async function main() {
       title: 'جلسه دوم: یادگیری ماشین',
       description: 'بررسی الگوریتم‌های یادگیری ماشین و کاربردها',
       scheduledStart: yesterday,
+      scheduledEnd: new Date(yesterday.getTime() + 90 * 60 * 1000),
       status: 'ended',
     },
   });
@@ -279,6 +281,7 @@ async function main() {
       title: 'جلسه سوم: شبکه‌های عصبی',
       description: 'مقدمه‌ای بر شبکه‌های عصبی و یادگیری عمیق',
       scheduledStart: tomorrow,
+      scheduledEnd: new Date(tomorrow.getTime() + 90 * 60 * 1000),
       status: 'scheduled',
     },
   });
