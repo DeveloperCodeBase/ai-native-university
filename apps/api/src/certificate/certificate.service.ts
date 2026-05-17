@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { IssueCertificateDto } from './dto/certificate.dto';
 
@@ -29,7 +29,7 @@ export class CertificateService {
       },
       include: {
         user: { select: { id: true, fullName: true, email: true } },
-        course: { select: { id: true, title: true, slug: true } } as any,
+        course: { select: { id: true, title: true, slug: true } },
       },
     });
   }
@@ -38,7 +38,6 @@ export class CertificateService {
     const course = await this.prisma.course.findUnique({ where: { id: courseId } });
     if (!course) return null;
 
-    // Avoid duplicate certificate for same user+course
     const existing = await this.prisma.certificate.findFirst({
       where: { tenantId, userId, courseId },
     });
@@ -57,7 +56,7 @@ export class CertificateService {
       where: { tenantId, userId, revokedAt: null },
       orderBy: { issuedAt: 'desc' },
       include: {
-        course: { select: { id: true, title: true, slug: true } } as any,
+        course: { select: { id: true, title: true, slug: true } },
       },
     });
   }
@@ -67,7 +66,7 @@ export class CertificateService {
       where: { id, tenantId },
       include: {
         user: { select: { id: true, fullName: true, email: true } },
-        course: { select: { id: true, title: true, slug: true } } as any,
+        course: { select: { id: true, title: true, slug: true } },
       },
     });
     if (!cert) throw new NotFoundException('گواهینامه یافت نشد');
@@ -75,7 +74,6 @@ export class CertificateService {
   }
 
   async verify(code: string) {
-    const baseUrl = process.env.APP_BASE_URL || 'http://localhost:3010';
     const cert = await this.prisma.certificate.findFirst({
       where: {
         verificationUrl: { contains: code },
@@ -83,7 +81,7 @@ export class CertificateService {
       },
       include: {
         user: { select: { id: true, fullName: true } },
-        course: { select: { id: true, title: true } } as any,
+        course: { select: { id: true, title: true } },
         tenant: { select: { id: true, name: true } },
       },
     });
