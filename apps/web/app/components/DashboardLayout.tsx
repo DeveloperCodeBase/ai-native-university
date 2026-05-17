@@ -25,7 +25,7 @@ import styles from './DashboardLayout.module.css';
 interface NavItem {
   href: string;
   label: string;
-  Icon: React.ComponentType<{ size?: number; strokeWidth?: number }>;
+  Icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>;
   roles?: string[];
 }
 
