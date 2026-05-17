@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
 import styles from './courses.module.css';
 import { apiGet, getUser } from '../lib/api';
 
@@ -152,11 +153,14 @@ export default function CoursesPage() {
         ) : (
           <div className={styles.courseGrid}>
             {filteredCourses.map((course, i) => (
-              <div
+              <motion.div
                 key={course.id}
                 className={`glass-card ${styles.courseCard}`}
                 onClick={() => router.push(`/courses/${course.slug}`)}
-                style={{ animationDelay: `${i * 0.05}s` }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                whileHover={{ y: -4, transition: { duration: 0.2 } }}
               >
                 <div className={styles.courseThumb}>
                   {courseIcons[i % courseIcons.length]}
@@ -183,7 +187,7 @@ export default function CoursesPage() {
                     )}
                   </div>
                 </div>
-              </div>
+              </motion.div>
             ))}
           </div>
         )}

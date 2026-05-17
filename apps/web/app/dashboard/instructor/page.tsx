@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from '../dashboard.module.css';
 import { apiGet, getUser, logout } from '../../lib/api';
+import NotificationBell from '../../components/NotificationBell';
 
 interface User {
   id: string;
@@ -78,7 +79,10 @@ export default function InstructorDashboard() {
             <h1 className={styles.headerTitle}>سلام، {user.fullName} 👋</h1>
             <p className={styles.headerSub}>پنل مدیریت استاد</p>
           </div>
-          <span className="badge badge-accent">👨‍🏫 استاد</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <NotificationBell />
+            <span className="badge badge-accent">👨‍🏫 استاد</span>
+          </div>
         </header>
 
         <div className={styles.grid}>

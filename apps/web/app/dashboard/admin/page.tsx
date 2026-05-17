@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import styles from '../dashboard.module.css';
 import { apiGet, getUser, logout } from '../../lib/api';
+import NotificationBell from '../../components/NotificationBell';
 
 interface User {
   id: string;
@@ -83,7 +84,10 @@ export default function AdminDashboard() {
             <h1 className={styles.headerTitle}>پنل مدیریت 🛡️</h1>
             <p className={styles.headerSub}>خوش آمدید، {user.fullName}</p>
           </div>
-          <span className="badge badge-primary">🛡️ {user.role === 'super_admin' ? 'مدیر کل' : 'مدیر'}</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <NotificationBell />
+            <span className="badge badge-primary">🛡️ {user.role === 'super_admin' ? 'مدیر کل' : 'مدیر'}</span>
+          </div>
         </header>
 
         <div className={styles.grid}>

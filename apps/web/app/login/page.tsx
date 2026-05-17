@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import styles from './login.module.css';
 
 export default function LoginPage() {
@@ -76,7 +77,12 @@ export default function LoginPage() {
         <div className={styles.orb2} />
       </div>
 
-      <div className={styles.container}>
+      <motion.div
+        className={styles.container}
+        initial={{ opacity: 0, y: 32 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      >
         {/* Branding */}
         <div className={styles.branding}>
           <a href="/" className={styles.logo}>
@@ -90,12 +96,20 @@ export default function LoginPage() {
           <h1 className={styles.title}>ورود به پنل</h1>
           <p className={styles.subtitle}>به دانشگاه آنلاین هوشمند خوش آمدید</p>
 
-          {error && (
-            <div className={styles.errorBox}>
-              <span>⚠️</span>
-              <span>{error}</span>
-            </div>
-          )}
+          <AnimatePresence>
+            {error && (
+              <motion.div
+                className={styles.errorBox}
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                transition={{ duration: 0.25 }}
+              >
+                <span>⚠️</span>
+                <span>{error}</span>
+              </motion.div>
+            )}
+          </AnimatePresence>
 
           <form onSubmit={handleSubmit} className={styles.form}>
             <div className={styles.field}>
@@ -171,7 +185,7 @@ export default function LoginPage() {
             <a href="/register">ثبت‌نام کنید</a>
           </p>
         </div>
-      </div>
+      </motion.div>
     </div>
   );
 }

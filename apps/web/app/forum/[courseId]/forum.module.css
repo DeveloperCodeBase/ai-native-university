@@ -1,0 +1,175 @@
+.page {
+  min-height: 100dvh;
+  background: var(--bg-base);
+  padding: var(--space-8) var(--space-4);
+  position: relative;
+}
+
+.orbs { position: fixed; inset: 0; pointer-events: none; z-index: 0; }
+.orb1 {
+  position: absolute; top: -10%; right: -5%;
+  width: 450px; height: 450px; border-radius: 50%;
+  background: radial-gradient(circle, var(--brand-500), transparent 70%);
+  opacity: 0.07;
+  animation: orb-drift 14s ease-in-out infinite alternate;
+}
+.orb2 {
+  position: absolute; bottom: -10%; left: -5%;
+  width: 350px; height: 350px; border-radius: 50%;
+  background: radial-gradient(circle, var(--accent-500), transparent 70%);
+  opacity: 0.06;
+  animation: orb-drift 18s ease-in-out infinite alternate-reverse;
+}
+@keyframes orb-drift {
+  from { transform: translate(0,0) scale(1); }
+  to   { transform: translate(30px,-30px) scale(1.1); }
+}
+
+.inner {
+  position: relative; z-index: 1;
+  max-width: 860px;
+  margin: 0 auto;
+  display: flex; flex-direction: column; gap: var(--space-5);
+}
+
+.header {
+  display: flex; justify-content: space-between; align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.pageTitle {
+  font-size: var(--text-3xl);
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+.pageSub { color: var(--text-tertiary); font-size: var(--text-base); }
+
+.searchRow {
+  display: flex; gap: var(--space-3);
+}
+.searchRow .input { flex: 1; }
+
+.loadingState { display: flex; flex-direction: column; gap: var(--space-3); }
+
+.empty {
+  text-align: center;
+  padding: var(--space-16) 0;
+  color: var(--text-tertiary);
+  display: flex; flex-direction: column; align-items: center; gap: var(--space-4);
+}
+
+/* ── Compose ── */
+.compose { border: 1px solid var(--brand-500) !important; }
+.composeTitle { font-size: var(--text-xl); font-weight: 700; color: var(--text-primary); margin-bottom: var(--space-5); }
+.composeActions { display: flex; gap: var(--space-3); }
+
+/* ── Thread Card ── */
+.threadList { display: flex; flex-direction: column; gap: var(--space-4); }
+
+.threadCard {
+  cursor: pointer;
+  display: flex; flex-direction: column; gap: var(--space-3);
+  padding: var(--space-6);
+}
+
+.threadPinned { border-color: var(--gold-500) !important; }
+
+.threadMeta {
+  display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+}
+.threadRole {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--brand-400);
+}
+.threadAuthor {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+.threadDate {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  margin-right: auto;
+}
+
+.threadTitle {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+  line-height: var(--leading-snug);
+}
+.threadBody {
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+  line-height: var(--leading-loose);
+}
+.threadStats {
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+}
+
+/* ── Thread Detail ── */
+.backBtn { align-self: flex-start; }
+
+.threadDetail {
+  display: flex; flex-direction: column; gap: var(--space-4);
+}
+.threadDetailTitle {
+  font-size: var(--text-2xl);
+  font-weight: 800;
+  color: var(--text-primary);
+}
+.threadDetailBody {
+  color: var(--text-primary);
+  line-height: var(--leading-loose);
+  font-size: var(--text-lg);
+  white-space: pre-wrap;
+}
+
+/* ── Replies ── */
+.replies { display: flex; flex-direction: column; gap: var(--space-4); }
+.repliesTitle {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.replyCard {
+  display: flex; flex-direction: column; gap: var(--space-3);
+  padding: var(--space-5);
+}
+.replyAnswer {
+  border-color: var(--success) !important;
+  box-shadow: 0 0 16px var(--success-glow);
+}
+.answerMark {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--success);
+  margin-bottom: var(--space-1);
+}
+.replyMeta {
+  display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap;
+}
+.replyBody {
+  color: var(--text-primary);
+  line-height: var(--leading-loose);
+  font-size: var(--text-base);
+  white-space: pre-wrap;
+}
+.replyActions { display: flex; gap: var(--space-2); margin-top: var(--space-2); }
+
+/* ── Reply Form ── */
+.replyForm { display: flex; flex-direction: column; gap: var(--space-4); }
+.replyFormTitle {
+  font-size: var(--text-xl);
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+@media (max-width: 600px) {
+  .header { flex-direction: column; }
+  .searchRow { flex-direction: column; }
+}
