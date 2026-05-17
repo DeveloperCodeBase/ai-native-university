@@ -16,7 +16,7 @@ interface Notification {
   metadata?: Record<string, any>;
 }
 
-const TypeIconMap: Record<string, React.ComponentType<{ size?: number }>> = {
+const TypeIconMap: Record<string, React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }>> = {
   enrollment:    BookOpen,
   grade:         FileText,
   class_starting:Video,

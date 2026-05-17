@@ -22,7 +22,7 @@ interface ClassSession {
   _count?: { attendances: number; recordings: number };
 }
 
-const STATUS: Record<string, { label: string; badge: string; Icon: React.ComponentType<{ size?: number }> }> = {
+const STATUS: Record<string, { label: string; badge: string; Icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string }> }> = {
   scheduled: { label: 'برنامه‌ریزی شده', badge: 'badge-primary', Icon: Calendar },
   live:      { label: 'در حال برگزاری',  badge: 'badge-accent',  Icon: RadioTower },
   ended:     { label: 'پایان یافته',     badge: 'badge-success', Icon: Film },
