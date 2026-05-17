@@ -10,10 +10,12 @@ interface ClassSession {
   id: string;
   title: string;
   description: string;
-  scheduledAt: string;
-  endedAt: string | null;
+  scheduledStart: string;
+  scheduledEnd: string;
+  actualStart?: string | null;
+  actualEnd?: string | null;
   status: string;
-  meetingUrl: string | null;
+  joinUrl: string | null;
   course?: { id: string; title: string; slug: string };
   _count?: { attendances: number; recordings: number };
 }
@@ -150,7 +152,7 @@ export default function ClassSessionsPage() {
                           <p className={styles.cardDesc}>{session.description}</p>
                         )}
                         <div className={styles.cardStats}>
-                          <span>📅 {formatDate(session.scheduledAt)}</span>
+                          <span>📅 {formatDate(session.scheduledStart)}</span>
                           {session._count && (
                             <>
                               <span>👥 {toPersianNum(session._count.attendances)} حاضر</span>
@@ -188,9 +190,9 @@ export default function ClassSessionsPage() {
                             🎬 ضبط موجود
                           </span>
                         )}
-                        {session.meetingUrl && session.status === 'live' && (
+                        {session.joinUrl && session.status === 'live' && (
                           <a
-                            href={session.meetingUrl}
+                            href={session.joinUrl}
                             target="_blank"
                             rel="noopener noreferrer"
                             className="btn btn-ghost btn-sm"
