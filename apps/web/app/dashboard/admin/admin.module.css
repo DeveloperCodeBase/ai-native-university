@@ -1,0 +1,101 @@
+.twoCol {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+}
+
+@media (max-width: 900px) { .twoCol { grid-template-columns: 1fr; } }
+
+.eventList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.eventRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-2);
+  border-radius: var(--radius-md);
+  transition: background var(--dur-fast) var(--ease-out);
+}
+.eventRow:hover { background: var(--surface-1); }
+
+.eventDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--brand-400);
+  margin-top: 6px;
+  flex-shrink: 0;
+}
+
+.eventInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.eventActor {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.eventType {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+  font-family: monospace;
+}
+
+.statusList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.statusName {
+  font-size: var(--text-sm);
+  color: var(--text-secondary);
+}
+
+.statusBadge {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.65rem;
+}
+
+.breakdownList {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.breakdownRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--border-subtle);
+}
+.breakdownRow:last-child { border-bottom: none; }
+
+.breakdownType {
+  font-size: var(--text-xs);
+  color: var(--text-secondary);
+  font-family: monospace;
+}
+
+.breakdownCount {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  color: var(--brand-400);
+}

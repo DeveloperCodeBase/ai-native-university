@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
+import {
+  GraduationCap, Search, BookOpen, Users, Layers,
+  BrainCircuit, ChevronLeft, Filter, ArrowLeft,
+} from 'lucide-react';
 import styles from './courses.module.css';
 import { apiGet, getUser } from '../lib/api';
 
@@ -18,83 +22,79 @@ interface Course {
   program?: { id: string; name: string };
 }
 
-const levelLabels: Record<string, string> = {
-  beginner: 'مقدماتی',
+const LEVEL_LABEL: Record<string, string> = {
+  beginner:     'مقدماتی',
   intermediate: 'متوسط',
-  advanced: 'پیشرفته',
+  advanced:     'پیشرفته',
 };
 
-const levelIcons: Record<string, string> = {
-  beginner: '🟢',
-  intermediate: '🟡',
-  advanced: '🔴',
+const LEVEL_CSS: Record<string, string> = {
+  beginner:     'level-beginner',
+  intermediate: 'level-intermediate',
+  advanced:     'level-advanced',
 };
 
-const courseIcons = ['📐', '🧠', '💻', '📊', '🔬', '🎯', '📚', '🏗️'];
+const stagger = { animate: { transition: { staggerChildren: 0.06 } } };
+const fadeUp  = { initial: { opacity: 0, y: 20 }, animate: { opacity: 1, y: 0 } };
 
 export default function CoursesPage() {
   const router = useRouter();
   const user = getUser();
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState('');
-  const [levelFilter, setLevelFilter] = useState('');
+  const [courses, setCourses]       = useState<Course[]>([]);
+  const [loading, setLoading]       = useState(true);
+  const [search, setSearch]         = useState('');
+  const [levelFilter, setLevel]     = useState('');
 
-  useEffect(() => {
-    fetchCourses();
-  }, [levelFilter, search]);
+  useEffect(() => { fetchCourses(); }, [levelFilter, search]);
 
   const fetchCourses = async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams();
+      const params = new URLSearchParams({ status: 'published' });
       if (levelFilter) params.set('level', levelFilter);
-      if (search) params.set('search', search);
-      params.set('status', 'published');
+      if (search)      params.set('search', search);
 
-      let data: any;
-      if (user) {
-        data = await apiGet(`/courses?${params}`);
-      } else {
-        // Public catalog
-        params.set('tenantId', '');
-        data = await apiGet(`/courses/catalog?${params}`);
-      }
-      setCourses(data.courses || []);
-    } catch (err) {
-      console.error('Failed to fetch courses:', err);
+      const data = user
+        ? await apiGet(`/courses?${params}`)
+        : await apiGet(`/courses/catalog?${params}`);
+
+      setCourses(data.courses ?? []);
+    } catch {
       setCourses([]);
     } finally {
       setLoading(false);
     }
   };
 
-  const filteredCourses = courses;
+  const dashHref = !user ? '/login'
+    : user.role === 'student' ? '/dashboard/student'
+    : user.role === 'instructor' ? '/dashboard/instructor'
+    : '/dashboard/admin';
 
   return (
-    <div className={styles.catalogPage}>
-      {/* Header */}
-      <header className={styles.header}>
+    <div className={styles.page}>
+      {/* Topbar */}
+      <header className={styles.topbar}>
         <div className="container">
-          <div className={styles.headerInner}>
-            <div className={styles.headerLeft}>
-              <a href="/" className={styles.logo}>
-                <span className={styles.logoIcon}>🎓</span>
-                <span className="gradient-text">دانشگاه هوشمند</span>
-              </a>
-            </div>
-            <div className={styles.headerRight}>
+          <div className={styles.topbarInner}>
+            <a href="/" className={styles.brand}>
+              <GraduationCap size={22} strokeWidth={1.7} className={styles.brandIcon} />
+              <span className="gradient-text">دانشگاه هوشمند</span>
+            </a>
+            <div className={styles.topbarActions}>
               {user ? (
                 <>
-                  <a href={`/dashboard/${user.role === 'super_admin' || user.role === 'admin' ? 'admin' : user.role}`} className="btn btn-secondary">
-                    📊 داشبورد
-                  </a>
-                  <a href="/tutor" className="btn btn-accent">
-                    🤖 تیوتر هوشمند
+                  <a href={dashHref} className="btn btn-secondary btn-sm">داشبورد</a>
+                  <a href="/tutor" className="btn btn-accent btn-sm">
+                    <BrainCircuit size={15} />
+                    تیوتر AI
                   </a>
                 </>
               ) : (
-                <a href="/login" className="btn btn-primary">ورود</a>
+                <>
+                  <a href="/login"    className="btn btn-ghost btn-sm">ورود</a>
+                  <a href="/register" className="btn btn-primary btn-sm">ثبت‌نام</a>
+                </>
               )}
             </div>
           </div>
@@ -102,94 +102,135 @@ export default function CoursesPage() {
       </header>
 
       <div className="container">
-        {/* Page Title */}
-        <h1 className={styles.pageTitle}>
-          <span className="gradient-text">کاتالوگ دروس</span>
-        </h1>
-        <p className={styles.pageSubtitle}>
-          دروس دانشگاه آنلاین هوشمند — یادگیری با پشتیبانی هوش مصنوعی
-        </p>
-
-        {/* Filters */}
-        <div className={styles.filters}>
-          <input
-            type="text"
-            placeholder="🔍 جستجوی درس..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className={styles.searchInput}
-          />
-          <button
-            className={`${styles.filterBtn} ${!levelFilter ? styles.filterBtnActive : ''}`}
-            onClick={() => setLevelFilter('')}
-          >
-            همه سطوح
-          </button>
-          {['beginner', 'intermediate', 'advanced'].map((level) => (
-            <button
-              key={level}
-              className={`${styles.filterBtn} ${levelFilter === level ? styles.filterBtnActive : ''}`}
-              onClick={() => setLevelFilter(level === levelFilter ? '' : level)}
-            >
-              {levelIcons[level]} {levelLabels[level]}
-            </button>
-          ))}
+        {/* Page header */}
+        <div className={styles.pageHeader}>
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>
+            <h1 className={styles.pageTitle}>
+              <span className="gradient-text">کاتالوگ دروس</span>
+            </h1>
+            <p className={styles.pageSubtitle}>
+              دروس دانشگاه آنلاین هوشمند — یادگیری با پشتیبانی هوش مصنوعی
+            </p>
+          </motion.div>
         </div>
 
-        {/* Content */}
-        {loading ? (
-          <div className={styles.loading}>
-            <div className={styles.loadingSpinner} />
-            <p>در حال بارگذاری دروس...</p>
+        {/* Filters */}
+        <motion.div
+          className={styles.filters}
+          initial={{ opacity: 0, y: 12 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, delay: 0.1 }}
+        >
+          <div className={styles.searchWrap}>
+            <Search size={16} className={styles.searchIcon} />
+            <input
+              type="text"
+              placeholder="جستجوی درس..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className={styles.searchInput}
+            />
           </div>
-        ) : filteredCourses.length === 0 ? (
-          <div className={styles.emptyState}>
-            <div className={styles.emptyIcon}>📭</div>
-            <h3 className={styles.emptyTitle}>درسی یافت نشد</h3>
-            <p className={styles.emptyDesc}>
-              {search ? 'عبارت جستجوی خود را تغییر دهید' : 'هنوز درسی منتشر نشده است'}
+          <div className={styles.levelFilters}>
+            <Filter size={14} style={{ color: 'var(--text-tertiary)' }} />
+            {['', 'beginner', 'intermediate', 'advanced'].map((lv) => (
+              <button
+                key={lv}
+                className={`${styles.filterChip}${levelFilter === lv ? ` ${styles.filterActive}` : ''}`}
+                onClick={() => setLevel(lv)}
+              >
+                {lv ? LEVEL_LABEL[lv] : 'همه'}
+              </button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Results */}
+        {loading ? (
+          <div className={styles.loadingGrid}>
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className={`skeleton ${styles.skeletonCard}`} />
+            ))}
+          </div>
+        ) : courses.length === 0 ? (
+          <div className="empty-state">
+            <div className="empty-icon"><BookOpen size={28} strokeWidth={1.5} /></div>
+            <h3 className="empty-title">درسی یافت نشد</h3>
+            <p className="empty-desc">
+              {search ? 'عبارت جستجو را تغییر دهید' : 'هنوز درسی منتشر نشده است'}
             </p>
           </div>
         ) : (
-          <div className={styles.courseGrid}>
-            {filteredCourses.map((course, i) => (
-              <motion.div
-                key={course.id}
-                className={`glass-card ${styles.courseCard}`}
-                onClick={() => router.push(`/courses/${course.slug}`)}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                whileHover={{ y: -4, transition: { duration: 0.2 } }}
-              >
-                <div className={styles.courseThumb}>
-                  {courseIcons[i % courseIcons.length]}
-                </div>
-                <div className={styles.courseBody}>
-                  {course.level && (
-                    <span className={`${styles.courseLevel} ${styles[`level${course.level.charAt(0).toUpperCase() + course.level.slice(1)}`]}`}>
-                      {levelIcons[course.level]} {levelLabels[course.level] || course.level}
-                    </span>
-                  )}
-                  <h3 className={styles.courseTitle}>{course.title}</h3>
-                  <p className={styles.courseDesc}>{course.description}</p>
-                  <div className={styles.courseMeta}>
-                    <span className={styles.courseMetaItem}>
-                      📦 {course._count?.modules || 0} ماژول
-                    </span>
-                    <span className={styles.courseMetaItem}>
-                      👥 {course._count?.enrollments || 0} دانشجو
-                    </span>
-                    {course.instructors?.[0] && (
-                      <span className={styles.instructorName}>
-                        👨‍🏫 {course.instructors[0].user.fullName}
+          <>
+            <p className={styles.resultCount}>
+              {courses.length} درس یافت شد
+            </p>
+            <motion.div
+              className={styles.grid}
+              variants={stagger}
+              initial="initial"
+              animate="animate"
+            >
+              {courses.map((course) => (
+                <motion.div
+                  key={course.id}
+                  className={`glass-card ${styles.card}`}
+                  variants={fadeUp}
+                  transition={{ duration: 0.4 }}
+                  whileHover={{ y: -4, transition: { duration: 0.18 } }}
+                  onClick={() => router.push(`/courses/${course.slug}`)}
+                  role="button"
+                  tabIndex={0}
+                  onKeyDown={(e) => e.key === 'Enter' && router.push(`/courses/${course.slug}`)}
+                >
+                  {/* Course thumb */}
+                  <div className={styles.thumb}>
+                    <BookOpen size={32} strokeWidth={1.4} className={styles.thumbIcon} />
+                  </div>
+
+                  <div className={styles.cardBody}>
+                    {course.level && (
+                      <span className={`badge ${LEVEL_CSS[course.level] || 'badge-primary'} ${styles.levelBadge}`}>
+                        {LEVEL_LABEL[course.level] || course.level}
                       </span>
                     )}
+
+                    <h3 className={styles.cardTitle}>{course.title}</h3>
+                    <p className={styles.cardDesc}>{course.description}</p>
+
+                    <div className={styles.cardMeta}>
+                      <span className={styles.metaItem}>
+                        <Layers size={13} />
+                        {course._count?.modules ?? 0} ماژول
+                      </span>
+                      <span className={styles.metaItem}>
+                        <Users size={13} />
+                        {course._count?.enrollments ?? 0} دانشجو
+                      </span>
+                    </div>
+
+                    {course.instructors?.[0] && (
+                      <div className={styles.instructor}>
+                        <div className={styles.instructorAvatar}>
+                          {course.instructors[0].user.fullName.charAt(0)}
+                        </div>
+                        <span className={styles.instructorName}>
+                          {course.instructors[0].user.fullName}
+                        </span>
+                      </div>
+                    )}
                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+
+                  <div className={styles.cardFooter}>
+                    <span className={styles.viewBtn}>
+                      مشاهده درس
+                      <ChevronLeft size={14} />
+                    </span>
+                  </div>
+                </motion.div>
+              ))}
+            </motion.div>
+          </>
         )}
       </div>
     </div>

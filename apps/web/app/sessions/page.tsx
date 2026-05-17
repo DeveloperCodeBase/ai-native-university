@@ -2,213 +2,182 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
+import {
+  Video, Calendar, Users, PlayCircle, Film,
+  RadioTower, ClipboardCheck, Link2,
+} from 'lucide-react';
+import DashboardLayout from '../components/DashboardLayout';
 import { apiGet, apiPost, getUser } from '../lib/api';
 import styles from './sessions.module.css';
 
 interface ClassSession {
   id: string;
   title: string;
-  description: string;
+  description?: string;
   scheduledStart: string;
-  scheduledEnd: string;
-  actualStart?: string | null;
-  actualEnd?: string | null;
   status: string;
-  joinUrl: string | null;
+  joinUrl?: string | null;
   course?: { id: string; title: string; slug: string };
   _count?: { attendances: number; recordings: number };
 }
 
-const toPersianNum = (n: number) =>
-  n.toString().replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[parseInt(d)]);
-
-const statusConfig: Record<string, { label: string; badge: string }> = {
-  scheduled: { label: '📅 برنامه‌ریزی شده', badge: 'badge-primary' },
-  live:       { label: '🔴 در حال برگزاری',  badge: 'badge-accent'  },
-  ended:      { label: '✅ پایان یافته',      badge: 'badge-success' },
-  cancelled:  { label: '❌ لغو شده',          badge: ''              },
+const STATUS: Record<string, { label: string; badge: string; Icon: React.ComponentType<{ size?: number }> }> = {
+  scheduled: { label: 'برنامه‌ریزی شده', badge: 'badge-primary', Icon: Calendar },
+  live:      { label: 'در حال برگزاری',  badge: 'badge-accent',  Icon: RadioTower },
+  ended:     { label: 'پایان یافته',     badge: 'badge-success', Icon: Film },
+  cancelled: { label: 'لغو شده',         badge: 'badge-danger',  Icon: Video },
 };
 
-function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('fa-IR', {
-    year: 'numeric', month: 'long', day: 'numeric',
-    hour: '2-digit', minute: '2-digit',
-  });
-}
+const formatDate = (iso: string) =>
+  new Date(iso).toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+
+const stagger = { animate: { transition: { staggerChildren: 0.07 } } };
+const fadeUp  = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } };
 
 export default function ClassSessionsPage() {
-  const router = useRouter();
-  const user = getUser();
+  const router  = useRouter();
+  const user    = getUser();
   const [sessions, setSessions] = useState<ClassSession[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [joining, setJoining] = useState<string | null>(null);
+  const [loading, setLoading]   = useState(true);
+  const [joining, setJoining]   = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) { router.push('/login'); return; }
-    fetchSessions();
+    apiGet('/class-sessions')
+      .then((d) => setSessions(Array.isArray(d) ? d : d.sessions ?? []))
+      .catch(() => setSessions([]))
+      .finally(() => setLoading(false));
   }, []);
 
-  const fetchSessions = async () => {
+  const join = async (id: string) => {
+    setJoining(id);
     try {
-      const data = await apiGet('/class-sessions');
-      setSessions(Array.isArray(data) ? data : data.sessions || []);
-    } catch {
-      setSessions([]);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleJoin = async (sessionId: string) => {
-    setJoining(sessionId);
-    try {
-      await apiPost(`/class-sessions/${sessionId}/join`, {});
-      await fetchSessions();
+      await apiPost(`/class-sessions/${id}/join`, {});
+      const d = await apiGet('/class-sessions');
+      setSessions(Array.isArray(d) ? d : d.sessions ?? []);
     } catch (err: any) {
-      alert(err.message || 'خطا در پیوستن به جلسه');
+      alert(err.message || 'خطا در پیوستن');
     } finally {
       setJoining(null);
     }
   };
 
-  if (!user) return null;
-
   return (
-    <div className={styles.page}>
-      <div className={styles.orbs} aria-hidden>
-        <div className={styles.orb1} />
-        <div className={styles.orb2} />
-      </div>
-
-      <div className={styles.inner}>
-        <motion.header
-          className={styles.header}
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        >
-          <div>
-            <h1 className={styles.pageTitle}>🎥 جلسات کلاس</h1>
-            <p className={styles.pageSub}>مشاهده و شرکت در جلسات آنلاین</p>
-          </div>
-          <div className={styles.navActions}>
-            <a href="/courses" className="btn btn-ghost">📚 دروس</a>
-            <a href="/tutor" className="btn btn-secondary">🤖 تیوتر</a>
-            <a
-              href={`/dashboard/${user.role === 'instructor' ? 'instructor' : user.role === 'admin' || user.role === 'super_admin' ? 'admin' : 'student'}`}
-              className="btn btn-primary"
-            >
-              📊 داشبورد
-            </a>
-          </div>
-        </motion.header>
-
+    <DashboardLayout title="جلسات کلاس">
+      <motion.div variants={stagger} initial="initial" animate="animate">
         {loading ? (
-          <div className={styles.center}>
-            <div className="spinner spinner-lg" />
+          <div className={styles.loadingGrid}>
+            {[...Array(4)].map((_, i) => <div key={i} className={`skeleton ${styles.skeletonCard}`} />)}
           </div>
         ) : sessions.length === 0 ? (
-          <motion.div
-            className={styles.empty}
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.4 }}
-          >
-            <span className={styles.emptyIcon}>📭</span>
-            <h3>جلسه‌ای یافت نشد</h3>
-            <p>هنوز جلسه کلاسی برنامه‌ریزی نشده است.</p>
-          </motion.div>
+          <div className="empty-state">
+            <div className="empty-icon"><Video size={28} strokeWidth={1.5} /></div>
+            <h3 className="empty-title">جلسه‌ای یافت نشد</h3>
+            <p className="empty-desc">هنوز جلسه کلاسی برنامه‌ریزی نشده است.</p>
+          </div>
         ) : (
           <div className={styles.list}>
-            <AnimatePresence>
-              {sessions.map((session, i) => {
-                const st = statusConfig[session.status] || statusConfig.scheduled;
-                return (
-                  <motion.div
-                    key={session.id}
-                    className={`glass-card ${styles.card}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.07, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-                  >
-                    <div className={styles.cardTop}>
-                      <div style={{ flex: 1 }}>
-                        <div className={styles.cardMeta}>
-                          <span className={`badge ${st.badge}`}>
-                            {session.status === 'live' ? (
-                              <span className={styles.livePulse}>
-                                <span className={styles.liveDot} />
-                                در حال برگزاری
-                              </span>
-                            ) : st.label}
-                          </span>
-                          {session.course && (
-                            <span className="badge badge-primary">📚 {session.course.title}</span>
-                          )}
-                        </div>
-                        <h3 className={styles.cardTitle}>{session.title}</h3>
-                        {session.description && (
-                          <p className={styles.cardDesc}>{session.description}</p>
-                        )}
-                        <div className={styles.cardStats}>
-                          <span>📅 {formatDate(session.scheduledStart)}</span>
-                          {session._count && (
-                            <>
-                              <span>👥 {toPersianNum(session._count.attendances)} حاضر</span>
-                              <span>🎬 {toPersianNum(session._count.recordings)} ضبط</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-
-                      <div className={styles.cardActions}>
-                        {session.status === 'live' && (
-                          <button
-                            className="btn btn-primary"
-                            onClick={() => handleJoin(session.id)}
-                            disabled={joining === session.id}
-                          >
-                            {joining === session.id
-                              ? <span className="spinner" style={{ width: 16, height: 16 }} />
-                              : '🔴 پیوستن'}
-                          </button>
-                        )}
-                        {session.status === 'scheduled' && (
-                          <button
-                            className="btn btn-secondary"
-                            onClick={() => handleJoin(session.id)}
-                            disabled={joining === session.id}
-                          >
-                            {joining === session.id
-                              ? <span className="spinner" style={{ width: 16, height: 16 }} />
-                              : '📝 ثبت حضور'}
-                          </button>
-                        )}
-                        {session.status === 'ended' && session._count && session._count.recordings > 0 && (
-                          <span className="badge badge-success" style={{ textAlign: 'center', padding: '8px 12px' }}>
-                            🎬 ضبط موجود
-                          </span>
-                        )}
-                        {session.joinUrl && session.status === 'live' && (
-                          <a
-                            href={session.joinUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="btn btn-ghost btn-sm"
-                          >
-                            🔗 لینک جلسه
-                          </a>
-                        )}
-                      </div>
+            {sessions.map((session) => {
+              const st = STATUS[session.status] ?? STATUS.scheduled;
+              const { Icon } = st;
+              return (
+                <motion.div
+                  key={session.id}
+                  className={`glass-card ${styles.card}`}
+                  variants={fadeUp}
+                  transition={{ duration: 0.4 }}
+                >
+                  <div className={styles.cardLeft}>
+                    <div className={`card-icon ${session.status === 'live' ? 'card-icon-accent' : 'card-icon-brand'}`}>
+                      <Icon size={18} strokeWidth={1.8} />
                     </div>
-                  </motion.div>
-                );
-              })}
-            </AnimatePresence>
+                    {session.status === 'live' && <div className={styles.livePulse} />}
+                  </div>
+
+                  <div className={styles.cardBody}>
+                    <div className={styles.cardMeta}>
+                      <span className={`badge ${st.badge}`}>
+                        {st.label}
+                      </span>
+                      {session.course && (
+                        <span className="tag">
+                          <Video size={10} />
+                          {session.course.title}
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className={styles.cardTitle}>{session.title}</h3>
+
+                    {session.description && (
+                      <p className={styles.cardDesc}>{session.description}</p>
+                    )}
+
+                    <div className={styles.cardStats}>
+                      <span className={styles.stat}>
+                        <Calendar size={13} />
+                        {formatDate(session.scheduledStart)}
+                      </span>
+                      {session._count && (
+                        <>
+                          <span className={styles.stat}>
+                            <Users size={13} />
+                            {session._count.attendances} حاضر
+                          </span>
+                          {session._count.recordings > 0 && (
+                            <span className={styles.stat}>
+                              <Film size={13} />
+                              {session._count.recordings} ضبط
+                            </span>
+                          )}
+                        </>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className={styles.cardActions}>
+                    {session.status === 'live' && (
+                      <button
+                        className="btn btn-accent"
+                        onClick={() => join(session.id)}
+                        disabled={joining === session.id}
+                      >
+                        {joining === session.id
+                          ? <span className="spinner" style={{ width: 16, height: 16 }} />
+                          : <><RadioTower size={15} /> پیوستن</>
+                        }
+                      </button>
+                    )}
+                    {session.status === 'scheduled' && (
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() => join(session.id)}
+                        disabled={joining === session.id}
+                      >
+                        <ClipboardCheck size={15} />
+                        ثبت حضور
+                      </button>
+                    )}
+                    {session.joinUrl && (
+                      <a href={session.joinUrl} target="_blank" rel="noopener noreferrer" className="btn btn-ghost btn-sm">
+                        <Link2 size={14} />
+                        لینک
+                      </a>
+                    )}
+                    {session.status === 'ended' && session._count && session._count.recordings > 0 && (
+                      <button className="btn btn-ghost btn-sm">
+                        <PlayCircle size={14} />
+                        ضبط
+                      </button>
+                    )}
+                  </div>
+                </motion.div>
+              );
+            })}
           </div>
         )}
-      </div>
-    </div>
+      </motion.div>
+    </DashboardLayout>
   );
 }

@@ -2,7 +2,8 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { apiGet, apiPost, apiPatch } from '../lib/api';
+import { Bell, BellOff, BookOpen, FileText, Video, Clock, Settings, Bot } from 'lucide-react';
+import { apiGet, apiPatch } from '../lib/api';
 import styles from './NotificationBell.module.css';
 
 interface Notification {
@@ -15,13 +16,13 @@ interface Notification {
   metadata?: Record<string, any>;
 }
 
-const typeIcon: Record<string, string> = {
-  enrollment: '📚',
-  grade: '📝',
-  class_starting: '🎥',
-  assignment_due: '⏰',
-  system: '🔔',
-  ai_review: '🤖',
+const TypeIconMap: Record<string, React.ComponentType<{ size?: number }>> = {
+  enrollment:    BookOpen,
+  grade:         FileText,
+  class_starting:Video,
+  assignment_due:Clock,
+  system:        Settings,
+  ai_review:     Bot,
 };
 
 const formatDate = (d: string) =>
@@ -87,11 +88,11 @@ export default function NotificationBell() {
   return (
     <div className={styles.wrapper} ref={dropdownRef}>
       <button
-        className={styles.bell}
+        className={`icon-btn ${styles.bell}`}
         onClick={() => setOpen((o) => !o)}
         aria-label="اعلان‌ها"
       >
-        🔔
+        <Bell size={18} strokeWidth={1.8} />
         {unread > 0 && (
           <motion.span
             className={styles.badge}
@@ -130,17 +131,19 @@ export default function NotificationBell() {
               )}
               {!loading && notifications.length === 0 && (
                 <div className={styles.empty}>
-                  <span>🔕</span>
+                  <BellOff size={22} style={{ color: 'var(--text-tertiary)' }} />
                   <p>اعلانی وجود ندارد</p>
                 </div>
               )}
-              {!loading && notifications.map((n) => (
+              {!loading && notifications.map((n) => {
+                const NIcon = TypeIconMap[n.type] ?? Bell;
+                return (
                 <div
                   key={n.id}
                   className={`${styles.item} ${!n.isRead ? styles.itemUnread : ''}`}
                   onClick={() => !n.isRead && markRead(n.id)}
                 >
-                  <span className={styles.itemIcon}>{typeIcon[n.type] || '🔔'}</span>
+                  <span className={styles.itemIcon}><NIcon size={14} /></span>
                   <div className={styles.itemContent}>
                     <p className={styles.itemTitle}>{n.title}</p>
                     {n.body && <p className={styles.itemBody}>{n.body}</p>}
@@ -148,7 +151,8 @@ export default function NotificationBell() {
                   </div>
                   {!n.isRead && <div className={styles.unreadDot} />}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </motion.div>
         )}

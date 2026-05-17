@@ -2,8 +2,14 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
+import {
+  BrainCircuit, Send, BookOpen, AlertTriangle,
+  Globe2, CheckCircle2, Cpu, RotateCcw,
+} from 'lucide-react';
+import DashboardLayout from '../components/DashboardLayout';
+import { apiGet, apiPost, getUser } from '../lib/api';
 import styles from './tutor.module.css';
-import { apiGet, apiPost, getUser, logout } from '../lib/api';
 
 interface Source {
   type: string;
@@ -13,293 +19,274 @@ interface Source {
   relevance_score: number;
 }
 
-interface ChatMessage {
+interface ChatMsg {
   id: string;
-  role: 'user' | 'bot';
+  role: 'user' | 'ai';
   content: string;
   confidence?: number;
   model?: string;
   provider?: string;
   human_review_required?: boolean;
   sources?: Source[];
-  timestamp: Date;
+  ts: Date;
 }
 
-interface Course {
-  id: string;
-  title: string;
-  slug: string;
-}
+interface Course { id: string; title: string; slug: string; }
 
-const hints = [
+const HINTS = [
   'یادگیری ماشین چیست؟',
   'Overfitting را توضیح بده',
-  'تفاوت supervised و unsupervised چیست؟',
-  'بهترین منابع برای یادگیری پایتون کدامند؟',
-  'الگوریتم مرتب‌سازی سریع را توضیح بده',
+  'تفاوت supervised و unsupervised؟',
+  'الگوریتم مرتب‌سازی سریع',
+  'شبکه عصبی چگونه یاد می‌گیرد؟',
 ];
 
 export default function TutorPage() {
   const router = useRouter();
-  const user = getUser();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const user   = getUser();
+  const endRef = useRef<HTMLDivElement>(null);
 
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [input, setInput] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [courses, setCourses] = useState<Course[]>([]);
-  const [selectedCourseId, setSelectedCourseId] = useState('');
+  const [messages, setMessages]       = useState<ChatMsg[]>([]);
+  const [input, setInput]             = useState('');
+  const [loading, setLoading]         = useState(false);
+  const [courses, setCourses]         = useState<Course[]>([]);
+  const [courseId, setCourseId]       = useState('');
 
   useEffect(() => {
-    if (!user) {
-      router.push('/login');
-      return;
-    }
-    fetchCourses();
+    if (!user) { router.push('/login'); return; }
+    apiGet('/courses?status=published').then((d) => setCourses(d.courses ?? [])).catch(() => {});
   }, []);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  useEffect(() => { endRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
 
-  const fetchCourses = async () => {
-    try {
-      const data = await apiGet('/courses?status=published');
-      setCourses(data.courses || []);
-    } catch (err) {
-      console.error('Failed to fetch courses:', err);
-    }
-  };
-
-  const sendMessage = async (text?: string) => {
-    const query = text || input.trim();
-    if (!query || loading) return;
-
-    const userMsg: ChatMessage = {
-      id: `usr_${Date.now()}`,
-      role: 'user',
-      content: query,
-      timestamp: new Date(),
-    };
-
-    setMessages((prev) => [...prev, userMsg]);
+  const send = async (text?: string) => {
+    const q = (text ?? input).trim();
+    if (!q || loading) return;
     setInput('');
     setLoading(true);
 
+    setMessages((prev) => [...prev, { id: `u_${Date.now()}`, role: 'user', content: q, ts: new Date() }]);
+
     try {
-      const response = await apiPost('/ai/tutor/ask', {
-        query,
-        courseId: selectedCourseId || undefined,
-      });
-
-      const botMsg: ChatMessage = {
-        id: `bot_${Date.now()}`,
-        role: 'bot',
-        content: response.answer || 'پاسخی دریافت نشد.',
-        confidence: response.confidence,
-        model: response.model,
-        provider: response.provider,
-        human_review_required: response.human_review_required,
-        sources: response.sources,
-        timestamp: new Date(),
-      };
-
-      setMessages((prev) => [...prev, botMsg]);
+      const res = await apiPost('/ai/tutor/ask', { query: q, courseId: courseId || undefined });
+      setMessages((prev) => [...prev, {
+        id: `ai_${Date.now()}`,
+        role: 'ai',
+        content: res.answer ?? 'پاسخی دریافت نشد.',
+        confidence: res.confidence,
+        model: res.model,
+        provider: res.provider,
+        human_review_required: res.human_review_required,
+        sources: res.sources,
+        ts: new Date(),
+      }]);
     } catch (err: any) {
-      const errorMsg: ChatMessage = {
-        id: `err_${Date.now()}`,
-        role: 'bot',
-        content: `❌ خطا: ${err.message || 'مشکل در اتصال به سرویس AI'}`,
-        timestamp: new Date(),
-      };
-      setMessages((prev) => [...prev, errorMsg]);
+      setMessages((prev) => [...prev, {
+        id: `e_${Date.now()}`,
+        role: 'ai',
+        content: `خطا در دریافت پاسخ: ${err.message ?? 'خطای شبکه'}`,
+        ts: new Date(),
+      }]);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      sendMessage();
-    }
-  };
-
-  if (!user) return null;
-
   return (
-    <div className={styles.tutorPage}>
-      {/* Sidebar */}
-      <aside className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
-          <span className={styles.sidebarLogo}>🤖</span>
-          <span className="gradient-text">تیوتر هوشمند</span>
-        </div>
-
-        {/* Course Context */}
-        <div className={styles.contextSection}>
-          <div className={styles.contextTitle}>📚 زمینه درس</div>
-          <select
-            className={styles.contextSelect}
-            value={selectedCourseId}
-            onChange={(e) => setSelectedCourseId(e.target.value)}
-          >
-            <option value="">بدون محدودیت درس</option>
-            {courses.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.title}
-              </option>
-            ))}
-          </select>
-          <p style={{ fontSize: '0.75rem', color: 'var(--color-text-muted)' }}>
-            با انتخاب درس، پاسخ‌ها از منابع آن درس استخراج می‌شوند.
-          </p>
-        </div>
-
-        <div className={styles.navLinks}>
-          <a href="/courses" className={styles.navLink}>📚 کاتالوگ دروس</a>
-          <a
-            href={`/dashboard/${user.role === 'super_admin' || user.role === 'admin' ? 'admin' : user.role}`}
-            className={styles.navLink}
-          >
-            📊 داشبورد
-          </a>
-          <button
-            onClick={logout}
-            className={styles.navLink}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', width: '100%', textAlign: 'right' }}
-          >
-            🚪 خروج
-          </button>
-        </div>
-      </aside>
-
-      {/* Chat Area */}
-      <div className={styles.chatArea}>
-        {/* Chat Header */}
-        <div className={styles.chatHeader}>
-          <div className={styles.chatAvatar}>🧠</div>
-          <div>
-            <div className={styles.chatTitle}>دستیار هوشمند RAG</div>
-            <div className={styles.chatSubtitle}>
-              پاسخ‌گویی بر اساس منابع درسی • AI-Native
-            </div>
+    <DashboardLayout>
+      <div className={styles.layout}>
+        {/* ── Settings Panel ── */}
+        <aside className={styles.panel}>
+          <div className="card-header" style={{ marginBottom: 'var(--space-5)' }}>
+            <h2 className="card-title">
+              <div className="card-icon card-icon-brand"><BrainCircuit size={16} /></div>
+              دستیار هوشمند
+            </h2>
           </div>
-        </div>
 
-        {/* Messages */}
-        <div className={styles.messages}>
-          {messages.length === 0 && (
-            <div className={styles.welcome}>
-              <span className={styles.welcomeIcon}>🤖</span>
-              <h2 className={styles.welcomeTitle}>سلام! من دستیار هوشمند شما هستم</h2>
-              <p>
-                هر سوالی درباره دروس دارید بپرسید. من از منابع درسی برای پاسخ‌گویی استفاده می‌کنم.
-              </p>
-              <div className={styles.welcomeHints}>
-                {hints.map((hint, i) => (
-                  <button
-                    key={i}
-                    className={styles.hintBtn}
-                    onClick={() => sendMessage(hint)}
-                  >
-                    {hint}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`${styles.message} ${msg.role === 'user' ? styles.messageUser : styles.messageBot}`}
+          <div className={styles.panelSection}>
+            <label className="label">
+              <BookOpen size={13} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} />
+              زمینه درس
+            </label>
+            <select
+              className="input"
+              value={courseId}
+              onChange={(e) => setCourseId(e.target.value)}
+              style={{ fontSize: 'var(--text-sm)' }}
             >
-              <div
-                className={`${styles.messageAvatar} ${msg.role === 'user' ? styles.messageAvatarUser : styles.messageAvatarBot}`}
-              >
-                {msg.role === 'user' ? '👤' : '🧠'}
-              </div>
-              <div>
-                <div
-                  className={`${styles.messageBubble} ${msg.role === 'user' ? styles.messageBubbleUser : styles.messageBubbleBot}`}
-                >
-                  {msg.content}
+              <option value="">بدون محدودیت</option>
+              {courses.map((c) => (
+                <option key={c.id} value={c.id}>{c.title}</option>
+              ))}
+            </select>
+            <p className={styles.panelNote}>
+              پاسخ‌ها از منابع درس انتخاب‌شده استخراج می‌شوند
+            </p>
+          </div>
 
-                  {/* AI Governance metadata */}
-                  {msg.role === 'bot' && msg.confidence !== undefined && (
-                    <div className={styles.messageGovernance}>
-                      <span className={styles.confidenceBadge}>
-                        دقت: {Math.round(msg.confidence * 100)}%
-                      </span>
-                      {msg.model && (
-                        <span className={styles.modelBadge}>
-                          {msg.model}
-                        </span>
-                      )}
-                      {msg.human_review_required && (
-                        <span className={styles.reviewBadge}>
-                          ⚠️ نیاز به بازبینی
-                        </span>
-                      )}
-                    </div>
-                  )}
+          <div className={styles.panelSection}>
+            <p className={styles.panelLabel}>ویژگی‌های AI Governance</p>
+            <ul className={styles.featureList}>
+              {[
+                { Icon: CheckCircle2, text: 'اطمینان پاسخ', color: 'var(--success)' },
+                { Icon: Globe2,       text: 'منبع‌محوری',    color: 'var(--accent-500)' },
+                { Icon: Cpu,          text: 'نام مدل',       color: 'var(--brand-400)' },
+                { Icon: AlertTriangle,text: 'بازبینی انسانی', color: 'var(--warning)' },
+              ].map(({ Icon, text, color }) => (
+                <li key={text} className={styles.featureItem}>
+                  <Icon size={14} style={{ color, flexShrink: 0 }} />
+                  <span>{text}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-                  {/* Sources */}
-                  {msg.sources && msg.sources.length > 0 && (
-                    <div className={styles.sources}>
-                      <div className={styles.sourcesTitle}>📎 منابع:</div>
-                      {msg.sources.map((src, i) => (
-                        <div key={i} className={styles.sourceItem}>
-                          {src.title || src.type}
-                          {src.relevance_score && ` (${Math.round(src.relevance_score * 100)}%)`}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          ))}
-
-          {loading && (
-            <div className={`${styles.message} ${styles.messageBot}`}>
-              <div className={`${styles.messageAvatar} ${styles.messageAvatarBot}`}>
-                🧠
-              </div>
-              <div className={styles.typing}>
-                <span className={styles.typingDot} />
-                <span className={styles.typingDot} />
-                <span className={styles.typingDot} />
-              </div>
-            </div>
+          {messages.length > 0 && (
+            <button
+              className="btn btn-ghost btn-sm"
+              style={{ width: '100%', marginTop: 'auto' }}
+              onClick={() => setMessages([])}
+            >
+              <RotateCcw size={14} />
+              پاک‌کردن مکالمه
+            </button>
           )}
+        </aside>
 
-          <div ref={messagesEndRef} />
-        </div>
+        {/* ── Chat ── */}
+        <div className={styles.chat}>
+          {/* Messages */}
+          <div className={styles.messages}>
+            {messages.length === 0 && (
+              <motion.div
+                className={styles.welcome}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+              >
+                <div className={styles.welcomeIcon}>
+                  <BrainCircuit size={36} strokeWidth={1.4} />
+                </div>
+                <h2 className={styles.welcomeTitle}>دستیار هوشمند RAG</h2>
+                <p className={styles.welcomeDesc}>
+                  هر سوالی درباره دروس دارید بپرسید. پاسخ‌ها از منابع درسی معتبر استخراج می‌شوند.
+                </p>
+                <div className={styles.hints}>
+                  {HINTS.map((h) => (
+                    <button key={h} className={styles.hintChip} onClick={() => send(h)}>
+                      {h}
+                    </button>
+                  ))}
+                </div>
+              </motion.div>
+            )}
 
-        {/* Input */}
-        <div className={styles.inputArea}>
-          <form className={styles.inputForm} onSubmit={(e) => { e.preventDefault(); sendMessage(); }}>
+            <AnimatePresence initial={false}>
+              {messages.map((msg) => (
+                <motion.div
+                  key={msg.id}
+                  className={`${styles.msgRow} ${msg.role === 'user' ? styles.msgRowUser : ''}`}
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  {msg.role === 'ai' && (
+                    <div className={styles.aiAvatar}>
+                      <BrainCircuit size={16} strokeWidth={1.8} />
+                    </div>
+                  )}
+
+                  <div className={styles.msgContent}>
+                    <div className={`chat-bubble ${msg.role === 'user' ? 'chat-bubble-user' : 'chat-bubble-ai'}`}>
+                      {msg.content}
+                    </div>
+
+                    {/* AI Governance */}
+                    {msg.role === 'ai' && msg.confidence !== undefined && (
+                      <div className={styles.governance}>
+                        <span className="tag">
+                          <CheckCircle2 size={10} style={{ color: 'var(--success)' }} />
+                          اطمینان: {Math.round(msg.confidence * 100)}٪
+                        </span>
+                        {msg.model && (
+                          <span className="tag">
+                            <Cpu size={10} />
+                            {msg.model}
+                          </span>
+                        )}
+                        {msg.human_review_required && (
+                          <span className="badge badge-warning" style={{ fontSize: '0.65rem' }}>
+                            <AlertTriangle size={10} />
+                            بازبینی نیاز
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Sources */}
+                    {msg.sources && msg.sources.length > 0 && (
+                      <div className={styles.sources}>
+                        <div className={styles.sourcesHeader}>
+                          <Globe2 size={12} />
+                          منابع:
+                        </div>
+                        {msg.sources.map((s, i) => (
+                          <div key={i} className={styles.source}>
+                            <span className={styles.sourceTitle}>{s.title || s.type}</span>
+                            {s.relevance_score && (
+                              <span className={styles.sourceScore}>
+                                {Math.round(s.relevance_score * 100)}٪
+                              </span>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </motion.div>
+              ))}
+            </AnimatePresence>
+
+            {loading && (
+              <motion.div
+                className={styles.msgRow}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
+                <div className={styles.aiAvatar}>
+                  <BrainCircuit size={16} strokeWidth={1.8} />
+                </div>
+                <div className={styles.typing}>
+                  <span /><span /><span />
+                </div>
+              </motion.div>
+            )}
+
+            <div ref={endRef} />
+          </div>
+
+          {/* Input */}
+          <form className={styles.inputBar} onSubmit={(e) => { e.preventDefault(); send(); }}>
             <input
-              type="text"
               className={styles.inputField}
               placeholder="سوال خود را بنویسید..."
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
+              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); } }}
               disabled={loading}
+              autoFocus
             />
             <button
               type="submit"
-              className={styles.sendBtn}
+              className={`btn btn-primary ${styles.sendBtn}`}
               disabled={loading || !input.trim()}
             >
-              ←
+              <Send size={16} />
             </button>
           </form>
         </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

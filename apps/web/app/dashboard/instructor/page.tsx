@@ -2,16 +2,14 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import styles from '../dashboard.module.css';
-import { apiGet, getUser, logout } from '../../lib/api';
-import NotificationBell from '../../components/NotificationBell';
+import { motion } from 'framer-motion';
+import { BookOpen, Users, Video, BrainCircuit, ArrowLeft, ChevronLeft } from 'lucide-react';
+import DashboardLayout from '../../components/DashboardLayout';
+import { apiGet, getUser } from '../../lib/api';
+import styles from '../student/student.module.css';
 
-interface User {
-  id: string;
-  email: string;
-  fullName: string;
-  role: string;
-}
+const toPersian = (n: number) =>
+  n.toString().replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[+d]);
 
 interface Course {
   id: string;
@@ -21,129 +19,107 @@ interface Course {
   _count: { modules: number; enrollments: number; classSessions: number; assessments: number };
 }
 
-const toPersianNum = (n: number) =>
-  n.toString().replace(/\d/g, (d) => '۰۱۲۳۴۵۶۷۸۹'[parseInt(d)]);
+const stagger = { animate: { transition: { staggerChildren: 0.07 } } };
+const fadeUp  = { initial: { opacity: 0, y: 16 }, animate: { opacity: 1, y: 0 } };
 
 export default function InstructorDashboard() {
   const router = useRouter();
-  const [user, setUser] = useState<User | null>(null);
+  const user   = getUser();
   const [courses, setCourses] = useState<Course[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem('user');
-    if (!stored) { router.push('/login'); return; }
-    const u = JSON.parse(stored);
-    if (u.role !== 'instructor') { router.push('/login'); return; }
-    setUser(u);
-    fetchCourses();
+    if (!user) { router.push('/login'); return; }
+    if (user.role !== 'instructor') {
+      router.push(user.role === 'student' ? '/dashboard/student' : '/dashboard/admin');
+      return;
+    }
+    apiGet('/courses').then((d) => {
+      setCourses(d.courses ?? []);
+      setLoading(false);
+    }).catch(() => setLoading(false));
   }, [router]);
 
-  const fetchCourses = async () => {
-    try {
-      const data = await apiGet('/courses');
-      setCourses(data.courses || []);
-    } catch (err) {
-      console.error('Failed to fetch courses:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const totalStudents    = courses.reduce((s, c) => s + (c._count?.enrollments   ?? 0), 0);
+  const totalSessions    = courses.reduce((s, c) => s + (c._count?.classSessions ?? 0), 0);
+  const totalAssessments = courses.reduce((s, c) => s + (c._count?.assessments   ?? 0), 0);
 
-  if (!user) return null;
-
-  const totalStudents = courses.reduce((sum, c) => sum + (c._count?.enrollments || 0), 0);
-  const totalSessions = courses.reduce((sum, c) => sum + (c._count?.classSessions || 0), 0);
-  const totalAssessments = courses.reduce((sum, c) => sum + (c._count?.assessments || 0), 0);
+  const metrics = [
+    { label: 'درس‌ها',     value: toPersian(courses.length),    Icon: BookOpen,   color: 'brand' },
+    { label: 'دانشجویان',  value: toPersian(totalStudents),     Icon: Users,      color: 'accent' },
+    { label: 'جلسات',      value: toPersian(totalSessions),     Icon: Video,      color: 'gold' },
+    { label: 'تیوتر AI',   value: 'AI',                          Icon: BrainCircuit, color: 'success', href: '/tutor' },
+  ];
 
   return (
-    <div className={styles.dashboard}>
-      <aside className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
-          <span className={styles.sidebarLogo}>🎓</span>
-          <span className="gradient-text">دانشگاه هوشمند</span>
-        </div>
-        <nav className={styles.nav}>
-          <a href="/dashboard/instructor" className={`${styles.navItem} ${styles.navItemActive}`}>📊 داشبورد</a>
-          <a href="/courses" className={styles.navItem}>📚 کاتالوگ دروس</a>
-          <a href="/tutor" className={styles.navItem}>🤖 تیوتر هوشمند</a>
-          <a href="/sessions" className={styles.navItem}>🎥 جلسات کلاس</a>
-          <a href="/courses" className={styles.navItem}>📝 آزمون‌ها و تکالیف</a>
-        </nav>
-        <button onClick={logout} className={styles.logoutBtn}>🚪 خروج</button>
-      </aside>
+    <DashboardLayout title={`سلام، ${user?.fullName ?? ''}`}>
+      <motion.div variants={stagger} initial="initial" animate="animate">
 
-      <main className={styles.main}>
-        <header className={styles.header}>
-          <div>
-            <h1 className={styles.headerTitle}>سلام، {user.fullName} 👋</h1>
-            <p className={styles.headerSub}>پنل مدیریت استاد</p>
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <NotificationBell />
-            <span className="badge badge-accent">👨‍🏫 استاد</span>
-          </div>
-        </header>
+        <motion.div className={styles.metricsGrid} variants={fadeUp} transition={{ duration: 0.45 }}>
+          {metrics.map(({ label, value, Icon, color, href }) => (
+            <div
+              key={label}
+              className={`glass-card ${styles.metricCard}`}
+              onClick={() => href && router.push(href)}
+              style={{ cursor: href ? 'pointer' : 'default' }}
+            >
+              <div className={`card-icon card-icon-${color}`}>
+                <Icon size={18} strokeWidth={1.8} />
+              </div>
+              <div className={styles.metricValue}>{loading ? '—' : value}</div>
+              <div className={styles.metricLabel}>{label}</div>
+            </div>
+          ))}
+        </motion.div>
 
-        <div className={styles.grid}>
-          <div className={`glass-card ${styles.statCard}`}>
-            <span className={styles.statIcon}>📚</span>
-            <span className={styles.statValue}>{toPersianNum(courses.length)}</span>
-            <span className={styles.statLabel}>درس فعال</span>
+        <motion.div className={`glass-card ${styles.section}`} variants={fadeUp} transition={{ duration: 0.45 }}>
+          <div className="card-header">
+            <h2 className="card-title">
+              <div className="card-icon card-icon-brand"><BookOpen size={16} /></div>
+              درس‌های من
+            </h2>
+            <a href="/courses" className="btn btn-ghost btn-sm">
+              مشاهده همه <ArrowLeft size={14} />
+            </a>
           </div>
-          <div className={`glass-card ${styles.statCard}`}>
-            <span className={styles.statIcon}>👥</span>
-            <span className={styles.statValue}>{toPersianNum(totalStudents)}</span>
-            <span className={styles.statLabel}>دانشجو</span>
-          </div>
-          <div className={`glass-card ${styles.statCard}`}>
-            <span className={styles.statIcon}>🎥</span>
-            <span className={styles.statValue}>{toPersianNum(totalSessions)}</span>
-            <span className={styles.statLabel}>جلسات کلاس</span>
-          </div>
-          <div className={`glass-card ${styles.statCard}`} style={{ cursor: 'pointer' }} onClick={() => router.push('/tutor')}>
-            <span className={styles.statIcon}>🤖</span>
-            <span className={styles.statValue}>AI</span>
-            <span className={styles.statLabel}>دستیار هوشمند</span>
-          </div>
-        </div>
 
-        <div className={`glass-card ${styles.sectionCard}`}>
-          <h2 className={styles.sectionTitle}>📚 درس‌های من</h2>
           {loading ? (
-            <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '1rem' }}>
-              ⏳ در حال بارگذاری...
-            </p>
+            <div className={styles.loadingList}>
+              {[...Array(3)].map((_, i) => <div key={i} className={`skeleton ${styles.skeletonRow}`} />)}
+            </div>
           ) : courses.length === 0 ? (
-            <p style={{ color: 'var(--color-text-muted)', textAlign: 'center', padding: '2rem' }}>
-              هنوز درسی تعریف نشده است
-            </p>
+            <div className="empty-state" style={{ padding: 'var(--space-10) 0' }}>
+              <div className="empty-icon"><BookOpen size={24} strokeWidth={1.5} /></div>
+              <h3 className="empty-title">هنوز درسی اضافه نشده</h3>
+            </div>
           ) : (
             <div className={styles.courseList}>
               {courses.map((course) => (
                 <div
                   key={course.id}
-                  className={styles.courseItem}
-                  style={{ cursor: 'pointer' }}
+                  className={styles.courseRow}
                   onClick={() => router.push(`/courses/${course.slug}`)}
                 >
                   <div className={styles.courseInfo}>
-                    <h3>{course.title}</h3>
-                    <p>
-                      {toPersianNum(course._count?.enrollments || 0)} دانشجو ·{' '}
-                      {toPersianNum(course._count?.modules || 0)} ماژول ·{' '}
-                      {toPersianNum(course._count?.assessments || 0)} آزمون
-                    </p>
+                    <h3 className={styles.courseTitle}>{course.title}</h3>
+                    <div style={{ display: 'flex', gap: 'var(--space-3)', alignItems: 'center' }}>
+                      <span className={`badge ${course.status === 'published' ? 'badge-success' : 'badge-primary'}`}>
+                        {course.status === 'published' ? 'منتشرشده' : 'پیش‌نویس'}
+                      </span>
+                      <span className={styles.courseProgress}>
+                        {toPersian(course._count?.enrollments ?? 0)} دانشجو ·{' '}
+                        {toPersian(course._count?.modules ?? 0)} ماژول
+                      </span>
+                    </div>
                   </div>
-                  <span className={`badge ${course.status === 'published' ? 'badge-success' : 'badge-primary'}`}>
-                    {course.status === 'published' ? 'منتشرشده' : course.status}
-                  </span>
+                  <ChevronLeft size={16} style={{ color: 'var(--text-tertiary)', flexShrink: 0 }} />
                 </div>
               ))}
             </div>
           )}
-        </div>
-      </main>
-    </div>
+        </motion.div>
+
+      </motion.div>
+    </DashboardLayout>
   );
 }
