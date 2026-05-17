@@ -2,6 +2,38 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.0.0] - 2026-05-18
+
+### Changed — Frontend Redesign: Professional University Theme
+
+- **Icons**: Replaced all emoji icons with `lucide-react` SVG icons across every page
+- **Shared layout**: New `DashboardLayout` component eliminates per-page sidebar duplication in all dashboard/feature pages
+- **Landing page**: Professional hero with trust indicators, stats grid, feature cards, AI showcase, footer
+- **Login page**: Password show/hide toggle, demo credential buttons, lucide icons
+- **Register page**: Two-panel brand/form layout with feature list
+- **Course catalog**: Sticky topbar, search-with-icon, level filter chips, skeleton loading (6 cards), course cards with level badge
+- **Course detail page**: Sticky nav, hero layout, module accordion with animation, side stats card — CSS fully migrated to new design tokens
+- **Lesson viewer**: Lucide icon sidebar, BrainCircuit AI tutor header, Send icon submit button
+- **AI tutor page**: Two-panel layout with governance metadata display (confidence, model, humanReview), BrainCircuit avatars, hint chips
+- **Sessions page**: Live-pulse animation for live sessions, status icon mapping
+- **Assessment page**: FileText intro icon, Trophy/BookOpen/CheckCircle2 result icons, Send submit button
+- **Forum page**: MessageCircle/PenLine/Pin/Lock/ThumbsUp/Send icons throughout
+- **Admin/Instructor/Student dashboards**: Metric grids, course lists, system status via `DashboardLayout`
+- **NotificationBell**: Bell/BellOff/BookOpen/FileText/Video/Clock/Settings/Bot icons
+
+### Added
+- `apps/web/app/components/DashboardLayout.tsx` — shared sidebar + topbar layout component
+- `apps/web/app/components/DashboardLayout.module.css`
+- `apps/web/app/dashboard/student/student.module.css`
+- `apps/web/app/dashboard/admin/admin.module.css`
+
+### Fixed
+- CSS typo `--accent-400: #33ebb f` → `--accent-400: #33ebbf`
+- Added extensive utility classes: `.metric-card`, `.nav-item`, `.card-icon`, `.empty-state`, `.tag`, etc.
+- Added `lucide-react` dependency to `apps/web/package.json`
+- `TypeScript`: Fixed `ComponentType<{ size?: number }>` → added `strokeWidth` and `className` to all icon type definitions
+- **DB**: Created `notifications` table migration (`20260517_notifications`) — table was defined in Prisma schema but had no migration file
+
 ## [2.3.0] - 2026-05-07
 
 ### Added — Phase 4: Class Sessions Frontend
