@@ -16,6 +16,7 @@ import { AnalyticsModule } from './analytics/analytics.module';
 import { AiModule } from './ai/ai.module';
 import { NotificationModule } from './notification/notification.module';
 import { CommunityModule } from './community/community.module';
+import { CertificateModule } from './certificate/certificate.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { CommunityModule } from './community/community.module';
     AiModule,
     NotificationModule,
     CommunityModule,
+    CertificateModule,
   ],
   controllers: [HealthController],
 })

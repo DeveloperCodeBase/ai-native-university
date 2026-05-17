@@ -5,6 +5,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { CertificateService } from '../certificate/certificate.service';
 import {
   CreateEnrollmentDto,
   UpdateEnrollmentDto,
@@ -13,7 +14,10 @@ import {
 
 @Injectable()
 export class EnrollmentService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private certificates: CertificateService,
+  ) {}
 
   async enroll(tenantId: string, userId: string, dto: CreateEnrollmentDto) {
     // If admin enrolling another student
@@ -127,10 +131,18 @@ export class EnrollmentService {
       data.droppedAt = new Date();
     }
 
-    return this.prisma.enrollment.update({
+    const updated = await this.prisma.enrollment.update({
       where: { id: enrollmentId },
       data,
     });
+
+    if (dto.status === 'completed' && enrollment.courseId) {
+      this.certificates
+        .issueOnCompletion(tenantId, enrollment.userId, enrollment.courseId)
+        .catch(() => {});
+    }
+
+    return updated;
   }
 
   async updateProgress(tenantId: string, enrollmentId: string, progress: number) {
