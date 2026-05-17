@@ -35,13 +35,9 @@ export class CourseController {
     @Query('tenantId') tenantId: string,
     @Query() query: CourseQueryDto,
   ) {
-    // Public catalog: show only published courses
     return {
       success: true,
-      data: await this.courseService.findAll(
-        tenantId || '',
-        { ...query, status: 'published' },
-      ),
+      data: await this.courseService.findCatalog(tenantId || null, { ...query, status: 'published' }),
     };
   }
 

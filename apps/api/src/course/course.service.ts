@@ -38,6 +38,35 @@ export class CourseService {
     });
   }
 
+  async findCatalog(tenantId: string | null, query: CourseQueryDto) {
+    const page = query.page ? parseInt(query.page, 10) : 1;
+    const pageSize = query.pageSize ? parseInt(query.pageSize, 10) : 20;
+    const where: any = { status: 'published' };
+    if (tenantId) where.tenantId = tenantId;
+    if (query.level) where.level = query.level;
+    if (query.search) {
+      where.OR = [
+        { title: { contains: query.search, mode: 'insensitive' } },
+        { description: { contains: query.search, mode: 'insensitive' } },
+      ];
+    }
+    const [courses, total] = await Promise.all([
+      this.prisma.course.findMany({
+        where,
+        orderBy: { createdAt: 'desc' },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        include: {
+          program: { select: { id: true, name: true } },
+          instructors: { include: { user: { select: { id: true, fullName: true } } } },
+          _count: { select: { modules: true, enrollments: true, classSessions: true } },
+        },
+      }),
+      this.prisma.course.count({ where }),
+    ]);
+    return { courses, total, page, pageSize };
+  }
+
   async findAll(tenantId: string, query: CourseQueryDto) {
     const page = query.page ? parseInt(query.page, 10) : 1;
     const pageSize = query.pageSize ? parseInt(query.pageSize, 10) : 20;
