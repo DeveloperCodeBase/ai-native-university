@@ -2,6 +2,21 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.1.0] - 2026-05-18
+
+### Added — New Feature Pages
+
+- **`/certificates`**: Student certificate wall — stats bar, animated grid, gold-accented cards, verification link + copy button, verification code display. Auto-issued on enrollment completion via `CertificateService.issueOnCompletion()`.
+- **`/analytics`**: Role-adaptive analytics/gradebook — tenant-wide stat cards for admins, two-column gradebook for instructors with course sidebar → assessment accordion → submission table drill-down.
+- **`/users`**: Admin user management — paginated searchable table, role filter, create-user modal with fullName/email/password/role fields.
+- **`/faculties`**: Faculty & department browser — animated card grid, create-faculty modal for admins, department chip list inside each faculty card.
+- **`/notifications`**: Full notification list — per-type icon mapping (Trophy/BookOpen/AlertTriangle/Info), mark-single-read on click, mark-all-read action, unread dot indicator.
+
+### Fixed
+
+- **`Certificate` Prisma model**: Added missing `course Course? @relation(...)` field and inverse `certificates Certificate[]` on `Course` model — resolves TS2353 build errors in `certificate.service.ts`.
+- **Migration `20260518_certificate_course_relation`**: Idempotent FK constraint migration applied on VPS.
+
 ## [3.0.0] - 2026-05-18
 
 ### Changed — Frontend Redesign: Professional University Theme
