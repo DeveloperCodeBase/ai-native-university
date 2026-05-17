@@ -55,7 +55,7 @@
 }
 .backLink:hover { color: var(--brand-400); }
 
-.introIcon { font-size: 4rem; line-height: 1; }
+.introIcon { display: flex; align-items: center; justify-content: center; }
 
 .introTitle {
   font-size: var(--text-3xl);
@@ -254,7 +254,7 @@
   gap: var(--space-6);
 }
 
-.resultIcon { font-size: 5rem; line-height: 1; animation: anim-float 3s ease-in-out infinite; }
+.resultIcon { display: flex; align-items: center; justify-content: center; animation: anim-float 3s ease-in-out infinite; }
 @keyframes anim-float {
   0%,100% { transform: translateY(0); }
   50% { transform: translateY(-12px); }

@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  MessageCircle, PenLine, Search, Pin, Lock, ThumbsUp,
+  CheckCircle2, Send, MessageSquare, ChevronRight,
+} from 'lucide-react';
 import { apiGet, apiPost, getUser } from '../../lib/api';
 import styles from './forum.module.css';
 
@@ -35,10 +39,10 @@ interface ThreadDetail extends Thread {
 type View = 'list' | 'thread';
 
 const roleLabel = (role: string) => ({
-  instructor: '👨‍🏫 استاد',
-  admin: '🛡️ مدیر',
-  teaching_assistant: '🎓 دستیار',
-  student: '🎓',
+  instructor: 'استاد',
+  admin: 'مدیر',
+  teaching_assistant: 'دستیار',
+  student: '',
 }[role] || '');
 
 export default function ForumPage() {
@@ -136,11 +140,14 @@ export default function ForumPage() {
       <div className={styles.inner}>
         <header className={styles.header}>
           <div>
-            <h1 className={styles.pageTitle}>💬 انجمن گفتگو</h1>
+            <h1 className={styles.pageTitle}>
+              <MessageCircle size={28} strokeWidth={1.7} style={{ color: 'var(--brand-400)', display: 'inline', verticalAlign: 'middle', marginLeft: 8 }} />
+              انجمن گفتگو
+            </h1>
             <p className={styles.pageSub}>سوالات و بحث‌های درس</p>
           </div>
           <button className="btn btn-primary" onClick={() => setComposing(true)}>
-            ✏️ موضوع جدید
+            <PenLine size={15} /> موضوع جدید
           </button>
         </header>
 
@@ -148,11 +155,11 @@ export default function ForumPage() {
         <form onSubmit={handleSearch} className={styles.searchRow}>
           <input
             className="input"
-            placeholder="🔍 جستجو در موضوعات..."
+            placeholder="جستجو در موضوعات..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
-          <button type="submit" className="btn btn-secondary">جستجو</button>
+          <button type="submit" className="btn btn-secondary"><Search size={15} /> جستجو</button>
         </form>
 
         {/* New Thread Modal */}
@@ -182,7 +189,7 @@ export default function ForumPage() {
                 </div>
                 <div className={styles.composeActions}>
                   <button type="submit" className="btn btn-primary" disabled={submitting}>
-                    {submitting ? <span className="spinner" style={{ width: 18, height: 18 }} /> : '📤 ارسال'}
+                    {submitting ? <span className="spinner" style={{ width: 18, height: 18 }} /> : <><Send size={15} /> ارسال</>}
                   </button>
                   <button type="button" className="btn btn-ghost" onClick={() => setComposing(false)}>
                     انصراف
@@ -202,7 +209,7 @@ export default function ForumPage() {
           </div>
         ) : threads.length === 0 ? (
           <div className={styles.empty}>
-            <span style={{ fontSize: '3rem' }}>💬</span>
+            <MessageCircle size={36} strokeWidth={1.4} style={{ color: 'var(--text-tertiary)' }} />
             <p>هنوز موضوعی ایجاد نشده. اولین نفر باشید!</p>
           </div>
         ) : (
@@ -217,8 +224,8 @@ export default function ForumPage() {
                 onClick={() => openThread(t.id)}
               >
                 <div className={styles.threadMeta}>
-                  {t.isPinned && <span className="badge badge-gold">📌 سنجاق شده</span>}
-                  {t.isLocked && <span className="badge badge-warning">🔒 قفل</span>}
+                  {t.isPinned && <span className="badge badge-gold" style={{ display: 'flex', gap: 4, alignItems: 'center' }}><Pin size={10} /> سنجاق شده</span>}
+                  {t.isLocked && <span className="badge badge-warning" style={{ display: 'flex', gap: 4, alignItems: 'center' }}><Lock size={10} /> قفل</span>}
                   <span className={styles.threadRole}>{roleLabel(t.author.role)}</span>
                   <span className={styles.threadAuthor}>{t.author.fullName}</span>
                   <span className={styles.threadDate}>{formatDate(t.createdAt)}</span>
@@ -226,7 +233,9 @@ export default function ForumPage() {
                 <h3 className={styles.threadTitle}>{t.title}</h3>
                 <p className={styles.threadBody}>{t.body.slice(0, 120)}{t.body.length > 120 ? '...' : ''}</p>
                 <div className={styles.threadStats}>
-                  <span>💬 {t.replyCount} پاسخ</span>
+                  <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <MessageSquare size={13} /> {t.replyCount} پاسخ
+                  </span>
                 </div>
               </motion.div>
             ))}
@@ -244,7 +253,7 @@ export default function ForumPage() {
       </div>
       <div className={styles.inner}>
         <button className={`btn btn-ghost ${styles.backBtn}`} onClick={() => { setView('list'); setActiveThread(null); }}>
-          ← بازگشت به لیست
+          <ChevronRight size={16} /> بازگشت به لیست
         </button>
 
         {threadLoading || !activeThread ? (
@@ -261,8 +270,8 @@ export default function ForumPage() {
               transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
             >
               <div className={styles.threadMeta}>
-                {activeThread.isPinned && <span className="badge badge-gold">📌 سنجاق</span>}
-                {activeThread.isLocked && <span className="badge badge-warning">🔒 قفل</span>}
+                {activeThread.isPinned && <span className="badge badge-gold" style={{ display: 'flex', gap: 4, alignItems: 'center' }}><Pin size={10} /> سنجاق</span>}
+                {activeThread.isLocked && <span className="badge badge-warning" style={{ display: 'flex', gap: 4, alignItems: 'center' }}><Lock size={10} /> قفل</span>}
                 <span className={styles.threadRole}>{roleLabel(activeThread.author.role)}</span>
                 <span className={styles.threadAuthor}>{activeThread.author.fullName}</span>
                 <span className={styles.threadDate}>{formatDate(activeThread.createdAt)}</span>
@@ -273,7 +282,10 @@ export default function ForumPage() {
 
             {/* Replies */}
             <div className={styles.replies}>
-              <h3 className={styles.repliesTitle}>💬 پاسخ‌ها ({activeThread.replies.length})</h3>
+              <h3 className={styles.repliesTitle} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <MessageSquare size={18} style={{ color: 'var(--brand-400)' }} />
+                پاسخ‌ها ({activeThread.replies.length})
+              </h3>
               {activeThread.replies.map((r, i) => (
                 <motion.div
                   key={r.id}
@@ -282,7 +294,7 @@ export default function ForumPage() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.06, duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
                 >
-                  {r.isAnswer && <div className={styles.answerMark}>✅ پاسخ برتر</div>}
+                  {r.isAnswer && <div className={styles.answerMark} style={{ display: 'flex', alignItems: 'center', gap: 6 }}><CheckCircle2 size={14} /> پاسخ برتر</div>}
                   <div className={styles.replyMeta}>
                     <span className={styles.threadRole}>{roleLabel(r.author.role)}</span>
                     <span className={styles.threadAuthor}>{r.author.fullName}</span>
@@ -290,8 +302,8 @@ export default function ForumPage() {
                   </div>
                   <p className={styles.replyBody}>{r.body}</p>
                   <div className={styles.replyActions}>
-                    <button className="btn btn-ghost btn-sm" onClick={() => toggleLike(r.id)}>
-                      👍 {r.likeCount}
+                    <button className="btn btn-ghost btn-sm" style={{ display: 'flex', alignItems: 'center', gap: 4 }} onClick={() => toggleLike(r.id)}>
+                      <ThumbsUp size={13} /> {r.likeCount}
                     </button>
                   </div>
                 </motion.div>
@@ -306,7 +318,9 @@ export default function ForumPage() {
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
               >
-                <h3 className={styles.replyFormTitle}>✍️ پاسخ دهید</h3>
+                <h3 className={styles.replyFormTitle} style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <PenLine size={18} style={{ color: 'var(--brand-400)' }} /> پاسخ دهید
+                </h3>
                 <form onSubmit={sendReply}>
                   <textarea
                     className="input"
@@ -318,14 +332,14 @@ export default function ForumPage() {
                     required
                   />
                   <button type="submit" className="btn btn-primary" disabled={submitting}>
-                    {submitting ? <span className="spinner" style={{ width: 18, height: 18 }} /> : '📤 ارسال پاسخ'}
+                    {submitting ? <span className="spinner" style={{ width: 18, height: 18 }} /> : <><Send size={15} /> ارسال پاسخ</>}
                   </button>
                 </form>
               </motion.div>
             )}
             {activeThread.isLocked && (
               <div className="alert alert-warning">
-                <span>🔒</span>
+                <Lock size={15} />
                 <span>این موضوع توسط مدیر قفل شده و امکان ارسال پاسخ وجود ندارد.</span>
               </div>
             )}

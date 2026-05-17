@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
+import {
+  ArrowRight, Clock, Video, Play, FileText, CheckCircle2,
+  BrainCircuit, Send, AlertTriangle,
+} from 'lucide-react';
 import { apiGet, apiPost, getUser } from '../../../../lib/api';
 import styles from './lesson.module.css';
 
@@ -120,32 +124,45 @@ export default function LessonPage() {
     <div className={styles.page}>
       {/* Sidebar */}
       <aside className={styles.sidebar}>
-        <a href={`/courses/${slug}`} className={styles.backBtn}>← بازگشت به درس</a>
+        <a href={`/courses/${slug}`} className={styles.backBtn}>
+          <ArrowRight size={14} /> بازگشت به درس
+        </a>
         <div className={styles.moduleLabel}>{lesson.module?.title}</div>
         <h2 className={styles.lessonTitle}>{lesson.title}</h2>
         {lesson.durationMin && (
-          <div className={styles.meta}>⏱ {lesson.durationMin} دقیقه</div>
+          <div className={styles.meta}>
+            <Clock size={13} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} />
+            {lesson.durationMin} دقیقه
+          </div>
         )}
         <div className={styles.contentTypeBadge}>
           <span className={`badge ${lesson.contentType === 'video' ? 'badge-accent' : 'badge-primary'}`}>
-            {lesson.contentType === 'video' ? '🎥 ویدئو' : lesson.contentType === 'interactive' ? '🧪 تعاملی' : '📄 متنی'}
+            {lesson.contentType === 'video'
+              ? <><Video size={11} /> ویدئو</>
+              : lesson.contentType === 'interactive'
+              ? <><Play size={11} /> تعاملی</>
+              : <><FileText size={11} /> متنی</>
+            }
           </span>
         </div>
 
         {!completed && (
           <button className={`btn btn-accent ${styles.completeBtn}`} onClick={markComplete}>
-            ✅ تکمیل شد
+            <CheckCircle2 size={16} /> تکمیل شد
           </button>
         )}
         {completed && (
-          <div className="badge badge-success" style={{ padding: '10px 16px', fontSize: '0.9rem' }}>
-            ✅ این درس تکمیل شده است
+          <div className="badge badge-success" style={{ padding: '10px 16px', fontSize: '0.9rem', display: 'flex', gap: 6, alignItems: 'center' }}>
+            <CheckCircle2 size={14} /> این درس تکمیل شده است
           </div>
         )}
 
         {lesson.aiSummary && (
           <div className={styles.aiSummaryBox}>
-            <div className={styles.aiSummaryLabel}>🤖 خلاصه AI</div>
+            <div className={styles.aiSummaryLabel}>
+              <BrainCircuit size={12} style={{ display: 'inline', marginLeft: 4 }} />
+              خلاصه AI
+            </div>
             <p className={styles.aiSummaryText}>{lesson.aiSummary}</p>
           </div>
         )}
@@ -188,7 +205,9 @@ export default function LessonPage() {
           transition={{ duration: 0.5, delay: 0.15, ease: [0.16, 1, 0.3, 1] }}
         >
           <div className={styles.tutorHeader}>
-            <span className={styles.tutorIcon}>🤖</span>
+            <div className="card-icon card-icon-brand" style={{ width: 40, height: 40, flexShrink: 0 }}>
+              <BrainCircuit size={18} strokeWidth={1.8} />
+            </div>
             <div>
               <h3 className={styles.tutorTitle}>تیوتر هوشمند</h3>
               <p className={styles.tutorSub}>سوال خود را از محتوای این درس بپرسید</p>
@@ -209,7 +228,7 @@ export default function LessonPage() {
               className="btn btn-primary"
               disabled={aiLoading || !aiQuestion.trim()}
             >
-              {aiLoading ? <span className="spinner" style={{ width: 18, height: 18 }} /> : '🔍 پرسیدن'}
+              {aiLoading ? <span className="spinner" style={{ width: 18, height: 18 }} /> : <><Send size={15} /> پرسیدن</>}
             </button>
           </form>
 
@@ -223,7 +242,9 @@ export default function LessonPage() {
               <p className={styles.answerText}>{aiResponse.answer}</p>
               <div className={styles.aiMeta}>
                 {aiResponse.model && (
-                  <span className="badge badge-primary">🤖 {aiResponse.model}</span>
+                  <span className="badge badge-primary" style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                    <BrainCircuit size={11} /> {aiResponse.model}
+                  </span>
                 )}
                 {aiResponse.confidence > 0 && (
                   <span className="badge badge-accent">
@@ -231,7 +252,9 @@ export default function LessonPage() {
                   </span>
                 )}
                 {aiResponse.human_review_required && (
-                  <span className="badge badge-warning">⚠️ نیاز به بازبینی استاد</span>
+                  <span className="badge badge-warning" style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                    <AlertTriangle size={11} /> نیاز به بازبینی استاد
+                  </span>
                 )}
               </div>
             </motion.div>

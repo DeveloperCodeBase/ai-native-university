@@ -3,6 +3,11 @@
 import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
+import {
+  AlertTriangle, FileText, Play, Clock, CheckCircle2,
+  Trophy, BookOpen, BarChart3, BrainCircuit, Send,
+  ChevronRight, ChevronLeft, Search,
+} from 'lucide-react';
 import { apiGet, apiPost, getUser, logout } from '../../lib/api';
 import styles from './assessment.module.css';
 
@@ -123,8 +128,8 @@ export default function AssessmentPage() {
 
   if (phase === 'error') return (
     <div className={styles.centered}>
-      <div style={{ fontSize: '3rem', marginBottom: 16 }}>⚠️</div>
-      <p style={{ color: 'var(--danger)' }}>{error}</p>
+      <AlertTriangle size={40} style={{ color: 'var(--danger)', marginBottom: 8 }} />
+      <p style={{ color: 'var(--text-secondary)' }}>{error}</p>
       <button className="btn btn-primary" style={{ marginTop: 24 }} onClick={() => router.back()}>
         بازگشت
       </button>
@@ -143,8 +148,10 @@ export default function AssessmentPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
       >
-        <a href={`/courses/${assessment.course?.id}`} className={styles.backLink}>← بازگشت</a>
-        <div className={styles.introIcon}>📝</div>
+        <a href={`/courses/${assessment.course?.id}`} className={styles.backLink}>
+          <ChevronRight size={16} style={{ display: 'inline', verticalAlign: 'middle' }} /> بازگشت
+        </a>
+        <div className={styles.introIcon}><FileText size={52} strokeWidth={1.4} style={{ color: 'var(--brand-400)' }} /></div>
         <h1 className={styles.introTitle}>{assessment.title}</h1>
         {assessment.description && (
           <p className={styles.introDesc}>{assessment.description}</p>
@@ -163,11 +170,11 @@ export default function AssessmentPage() {
           ))}
         </div>
         <div className={`alert alert-warning ${styles.notice}`}>
-          <span>⚠️</span>
+          <AlertTriangle size={15} />
           <span>پس از شروع آزمون نمی‌توانید صفحه را ترک کنید. پاسخ‌ها فقط یک‌بار ثبت می‌شوند.</span>
         </div>
         <button className="btn btn-primary btn-lg" style={{ width: '100%' }} onClick={startAssessment}>
-          🚀 شروع آزمون
+          <Play size={17} /> شروع آزمون
         </button>
       </motion.div>
     </div>
@@ -192,7 +199,8 @@ export default function AssessmentPage() {
           <div className={styles.headerRight}>
             {timeLeft !== null && (
               <div className={`${styles.timer} ${isTimeLow ? styles.timerLow : ''}`}>
-                ⏱ {formatTime(timeLeft)}
+                <Clock size={16} style={{ display: 'inline', verticalAlign: 'middle', marginLeft: 4 }} />
+                {formatTime(timeLeft)}
               </div>
             )}
             <span className={styles.answerCount}>
@@ -282,7 +290,7 @@ export default function AssessmentPage() {
               disabled={currentQ === 0}
               onClick={() => setCurrentQ((n) => n - 1)}
             >
-              ← قبلی
+              <ChevronRight size={16} /> قبلی
             </button>
 
             {/* Question dots */}
@@ -305,14 +313,14 @@ export default function AssessmentPage() {
               >
                 {phase === 'submitting' ? (
                   <><span className="spinner" style={{ width: 18, height: 18 }} /> ارسال...</>
-                ) : '✅ ارسال پاسخ‌نامه'}
+                ) : <><Send size={16} /> ارسال پاسخ‌نامه</>}
               </button>
             ) : (
               <button
                 className="btn btn-primary"
                 onClick={() => setCurrentQ((n) => n + 1)}
               >
-                بعدی →
+                بعدی <ChevronLeft size={16} />
               </button>
             )}
           </div>
@@ -339,7 +347,12 @@ export default function AssessmentPage() {
           transition={{ duration: 0.6, ease: [0.34, 1.56, 0.64, 1] }}
         >
           <div className={styles.resultIcon}>
-            {passed === true ? '🏆' : passed === false ? '📚' : '✅'}
+            {passed === true
+              ? <Trophy size={64} strokeWidth={1.4} style={{ color: 'var(--gold-500)' }} />
+              : passed === false
+              ? <BookOpen size={64} strokeWidth={1.4} style={{ color: 'var(--brand-400)' }} />
+              : <CheckCircle2 size={64} strokeWidth={1.4} style={{ color: 'var(--accent-500)' }} />
+            }
           </div>
           <h2 className={styles.resultTitle}>
             {passed === true ? 'تبریک! قبول شدید' :
@@ -356,24 +369,24 @@ export default function AssessmentPage() {
 
           {result.humanReviewRequired && (
             <div className="alert alert-info" style={{ marginTop: 16 }}>
-              <span>🔍</span>
+              <Search size={15} />
               <span>پاسخ‌نامه شما برای بازبینی توسط استاد ارسال شده است.</span>
             </div>
           )}
 
           {result.aiFeedback && (
             <div className={styles.aiFeedback}>
-              <span className={styles.aiLabel}>🤖 بازخورد AI</span>
+              <span className={styles.aiLabel}><BrainCircuit size={12} style={{ display: 'inline', marginLeft: 4 }} />بازخورد AI</span>
               <p>{result.aiFeedback}</p>
             </div>
           )}
 
           <div className={styles.resultActions}>
             <button className="btn btn-primary" onClick={() => router.push('/courses')}>
-              📚 بازگشت به دروس
+              <BookOpen size={16} /> بازگشت به دروس
             </button>
             <button className="btn btn-secondary" onClick={() => router.push('/dashboard/student')}>
-              📊 داشبورد
+              <BarChart3 size={16} /> داشبورد
             </button>
           </div>
         </motion.div>

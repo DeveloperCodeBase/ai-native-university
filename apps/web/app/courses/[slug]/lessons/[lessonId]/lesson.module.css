@@ -133,7 +133,7 @@
   align-items: flex-start;
   gap: var(--space-4);
 }
-.tutorIcon { font-size: 2rem; }
+.tutorIcon { display: flex; }
 .tutorTitle {
   font-size: var(--text-xl);
   font-weight: 700;
