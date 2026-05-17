@@ -1,6 +1,6 @@
 # Agent Runbook
 
-This file is mandatory for Google Antigravity. Read it before doing any task.
+This file is mandatory for claude agent. Read it before doing any task.
 
 ## Role
 
@@ -11,7 +11,7 @@ You code locally on Windows, but all runtime, Docker, logs, tests, diagnostics, 
 ## Hard Rules
 
 1. Do not run production Docker commands directly on Windows.
-2. Do not use Antigravity Remote-SSH agent execution directly on the VPS.
+2. Do not use claude Remote-SSH agent execution directly on the VPS.
 3. Do not commit real secrets.
 4. Never commit `.env`.
 5. Always keep `.env.example` updated.
