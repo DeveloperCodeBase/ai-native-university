@@ -1,4 +1,4 @@
--- CreateTable
+-- CreateTable (IF NOT EXISTS because db push may have already created it)
 CREATE TABLE IF NOT EXISTS "notifications" (
     "id" TEXT NOT NULL,
     "tenantId" TEXT NOT NULL,
@@ -19,8 +19,15 @@ CREATE INDEX IF NOT EXISTS "notifications_userId_isRead_createdAt_idx" ON "notif
 -- CreateIndex
 CREATE INDEX IF NOT EXISTS "notifications_tenantId_idx" ON "notifications"("tenantId");
 
--- AddForeignKey
-ALTER TABLE "notifications" ADD CONSTRAINT "notifications_tenantId_fkey" FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+-- AddForeignKey (skip if already exists)
+DO $$ BEGIN
+  ALTER TABLE "notifications" ADD CONSTRAINT "notifications_tenantId_fkey"
+    FOREIGN KEY ("tenantId") REFERENCES "tenants"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
 
--- AddForeignKey
-ALTER TABLE "notifications" ADD CONSTRAINT "notifications_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+DO $$ BEGIN
+  ALTER TABLE "notifications" ADD CONSTRAINT "notifications_userId_fkey"
+    FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+EXCEPTION WHEN duplicate_object THEN NULL;
+END $$;
