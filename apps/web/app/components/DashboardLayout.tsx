@@ -19,6 +19,7 @@ import {
   ClipboardList,
   MessageSquare,
   Award,
+  PenLine,
 } from 'lucide-react';
 import { getUser, logout } from '../lib/api';
 import styles from './DashboardLayout.module.css';
@@ -41,6 +42,7 @@ const navItems: NavItem[] = [
   { href: '/users',                label: 'کاربران',        Icon: Users, roles: ['admin', 'super_admin'] },
   { href: '/faculties',            label: 'دانشکده‌ها',     Icon: Building2, roles: ['admin', 'super_admin', 'instructor'] },
   { href: '/analytics',            label: 'تحلیل',          Icon: BarChart3, roles: ['admin', 'super_admin', 'instructor'] },
+  { href: '/courses/manage',       label: 'مدیریت دروس',    Icon: PenLine, roles: ['admin', 'super_admin', 'instructor'] },
   { href: '/certificates',         label: 'گواهینامه‌ها',   Icon: Award, roles: ['student'] },
   { href: '/forum',                label: 'انجمن',          Icon: MessageSquare },
   { href: '/notifications',        label: 'اعلان‌ها',       Icon: Bell },

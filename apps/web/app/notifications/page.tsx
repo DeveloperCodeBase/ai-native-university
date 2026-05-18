@@ -40,7 +40,7 @@ export default function NotificationsPage() {
   const load = () => {
     setLoading(true);
     apiGet('/notifications')
-      .then((d) => setNotifications(d.data?.notifications || d.data || []))
+      .then((d) => setNotifications(d.notifications || []))
       .catch(() => {})
       .finally(() => setLoading(false));
   };

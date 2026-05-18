@@ -37,10 +37,8 @@ interface Submission {
 }
 
 interface CourseStats {
-  totalStudents: number;
-  activeStudents: number;
-  avgProgress: number;
-  completionRate: number;
+  enrollmentStats: Record<string, number>;
+  eventCounts: Record<string, number>;
 }
 
 const scoreColor = (score: number, total: number, styles: any) => {
@@ -73,14 +71,14 @@ export default function AnalyticsPage() {
   useEffect(() => {
     apiGet('/courses')
       .then((d) => {
-        const list: Course[] = d.data || [];
+        const list: Course[] = d.courses || d || [];
         setCourses(list.filter((c) => c.status === 'published'));
       })
       .catch(() => {})
       .finally(() => setLoadingCourses(false));
 
     if (isAdmin) {
-      apiGet('/analytics/tenant').then((d) => setTenantStats(d.data)).catch(() => {});
+      apiGet('/analytics/tenant').then((d) => setTenantStats(d)).catch(() => {});
     }
   }, [isAdmin]);
 
@@ -93,8 +91,8 @@ export default function AnalyticsPage() {
     setCourseStats(null);
 
     Promise.all([
-      apiGet(`/assessments/course/${selectedCourse.id}`).then((d) => setAssessments(d.data || [])),
-      apiGet(`/analytics/course/${selectedCourse.id}`).then((d) => setCourseStats(d.data)),
+      apiGet(`/assessments/course/${selectedCourse.id}`).then((d) => setAssessments(Array.isArray(d) ? d : [])),
+      apiGet(`/analytics/course/${selectedCourse.id}`).then((d) => setCourseStats(d)),
     ])
       .catch(() => {})
       .finally(() => setLoadingPanel(false));
@@ -111,7 +109,7 @@ export default function AnalyticsPage() {
 
     try {
       const d = await apiGet(`/assessments/${assess.id}/submissions`);
-      setSubmissions((prev) => ({ ...prev, [assess.id]: d.data || [] }));
+      setSubmissions((prev) => ({ ...prev, [assess.id]: Array.isArray(d) ? d : [] }));
     } catch {
       setSubmissions((prev) => ({ ...prev, [assess.id]: [] }));
     }
@@ -130,29 +128,29 @@ export default function AnalyticsPage() {
             <div className={styles.statIcon} style={{ background: 'rgba(99,102,241,0.1)', color: 'var(--brand-400)' }}>
               <GraduationCap size={18} />
             </div>
-            <span className={styles.statValue}>{tenantStats.totalStudents ?? '--'}</span>
-            <span className={styles.statLabel}>دانشجو</span>
+            <span className={styles.statValue}>{tenantStats.summary?.totalUsers ?? '--'}</span>
+            <span className={styles.statLabel}>کاربران</span>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statIcon} style={{ background: 'rgba(34,197,94,0.1)', color: 'var(--accent-500)' }}>
               <BookOpen size={18} />
             </div>
-            <span className={styles.statValue}>{tenantStats.totalCourses ?? '--'}</span>
-            <span className={styles.statLabel}>درس فعال</span>
+            <span className={styles.statValue}>{tenantStats.summary?.totalCourses ?? '--'}</span>
+            <span className={styles.statLabel}>دروس</span>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statIcon} style={{ background: 'rgba(245,158,11,0.1)', color: 'var(--gold-500)' }}>
               <TrendingUp size={18} />
             </div>
-            <span className={styles.statValue}>{tenantStats.avgCompletionRate != null ? `${Math.round(tenantStats.avgCompletionRate)}%` : '--'}</span>
-            <span className={styles.statLabel}>نرخ اتمام</span>
+            <span className={styles.statValue}>{tenantStats.summary?.totalEnrollments ?? '--'}</span>
+            <span className={styles.statLabel}>ثبت‌نام‌ها</span>
           </div>
           <div className={styles.statCard}>
             <div className={styles.statIcon} style={{ background: 'rgba(239,68,68,0.1)', color: 'var(--danger)' }}>
               <AlertTriangle size={18} />
             </div>
-            <span className={styles.statValue}>{tenantStats.atRiskStudents ?? '--'}</span>
-            <span className={styles.statLabel}>دانشجو در معرض ریسک</span>
+            <span className={styles.statValue}>{tenantStats.summary?.totalEvents ?? '--'}</span>
+            <span className={styles.statLabel}>رویداد یادگیری</span>
           </div>
         </motion.div>
       )}
@@ -201,24 +199,24 @@ export default function AnalyticsPage() {
               {courseStats && (
                 <motion.div className={styles.courseStat} {...fadeUp}>
                   <div className={styles.courseStatItem}>
-                    <span className={styles.courseStatValue}>{courseStats.totalStudents ?? 0}</span>
-                    <span className={styles.courseStatLabel}>دانشجو</span>
+                    <span className={styles.courseStatValue}>
+                      {Object.values(courseStats.enrollmentStats || {}).reduce((a, b) => a + b, 0)}
+                    </span>
+                    <span className={styles.courseStatLabel}>ثبت‌نام‌ها</span>
                   </div>
                   <div className={styles.courseStatItem}>
-                    <span className={styles.courseStatValue}>{courseStats.activeStudents ?? 0}</span>
+                    <span className={styles.courseStatValue}>{courseStats.enrollmentStats?.active ?? 0}</span>
                     <span className={styles.courseStatLabel}>فعال</span>
                   </div>
                   <div className={styles.courseStatItem}>
-                    <span className={styles.courseStatValue}>
-                      {courseStats.avgProgress != null ? `${Math.round(courseStats.avgProgress)}%` : '--'}
-                    </span>
-                    <span className={styles.courseStatLabel}>میانگین پیشرفت</span>
+                    <span className={styles.courseStatValue}>{courseStats.enrollmentStats?.completed ?? 0}</span>
+                    <span className={styles.courseStatLabel}>تکمیل شده</span>
                   </div>
                   <div className={styles.courseStatItem}>
                     <span className={styles.courseStatValue}>
-                      {courseStats.completionRate != null ? `${Math.round(courseStats.completionRate)}%` : '--'}
+                      {Object.values(courseStats.eventCounts || {}).reduce((a, b) => a + b, 0)}
                     </span>
-                    <span className={styles.courseStatLabel}>نرخ اتمام</span>
+                    <span className={styles.courseStatLabel}>رویداد یادگیری</span>
                   </div>
                 </motion.div>
               )}
