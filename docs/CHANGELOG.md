@@ -2,6 +2,23 @@
 
 All notable changes to this project will be documented in this file.
 
+## [3.2.0] - 2026-05-18
+
+### Added
+
+- **`/profile`**: Self-service profile page — avatar, role badge, enrollment/submission stats, editable fullName/phone fields, quick links to certificates and courses.
+- **`/courses/manage`**: Instructor/admin course builder — two-panel layout with course list sidebar + right panel for: create course modal (title/slug/level/language), edit course details, publish/unpublish toggle, inline module management, inline lesson management with accordion expand.
+- **`/certificates/verify/[code]`**: Public certificate verification page — gold card display with issuer name, recipient, course title, issue date; shows invalid state for unknown/revoked codes.
+- **`/not-found`**: Custom 404 page with brand styling and navigation buttons.
+- **`PATCH /api/auth/profile`**: New self-service endpoint allows any authenticated user to update their own `fullName` and `phone` without admin privileges.
+- **Course management nav item**: Added "مدیریت دروس" to sidebar for instructor/admin roles.
+
+### Fixed
+
+- **analytics/page.tsx**: Fixed `d.data` → `d.courses` (apiGet already unwraps the data wrapper); fixed `setCourseStats(d.data)` → `setCourseStats(d)`; fixed `CourseStats` interface to match actual API shape `{ enrollmentStats, eventCounts }`.
+- **notifications/page.tsx**: Fixed `d.data.notifications` → `d.notifications`.
+- **certificates/verify page**: Used `useParams()` hook for Next.js 15 compatibility (dynamic params are Promise in Next.js 15).
+
 ## [3.1.0] - 2026-05-18
 
 ### Added — New Feature Pages
