@@ -1,8 +1,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { Award, ShieldCheck, User, BookOpen, Calendar, ExternalLink, AlertTriangle, GraduationCap } from 'lucide-react';
+import { Award, ShieldCheck, User, BookOpen, Calendar, AlertTriangle, GraduationCap } from 'lucide-react';
 
 interface Certificate {
   id: string;
@@ -18,13 +19,16 @@ interface Certificate {
 const formatDate = (d: string) =>
   new Date(d).toLocaleDateString('fa-IR', { year: 'numeric', month: 'long', day: 'numeric' });
 
-export default function CertVerifyPage({ params }: { params: { code: string } }) {
+export default function CertVerifyPage() {
+  const params = useParams();
+  const code = params?.code as string;
   const [cert, setCert] = useState<Certificate | null>(null);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/certificates/verify/${params.code}`)
+    if (!code) return;
+    fetch(`/api/certificates/verify/${code}`)
       .then((r) => {
         if (!r.ok) throw new Error('not found');
         return r.json();
@@ -32,7 +36,7 @@ export default function CertVerifyPage({ params }: { params: { code: string } })
       .then((d) => setCert(d.data))
       .catch(() => setNotFound(true))
       .finally(() => setLoading(false));
-  }, [params.code]);
+  }, [code]);
 
   return (
     <div style={{
@@ -78,7 +82,7 @@ export default function CertVerifyPage({ params }: { params: { code: string } })
               کد تأیید وارد شده در سیستم یافت نشد یا این گواهینامه باطل شده است.
             </p>
             <code style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)', background: 'var(--bg-base)', padding: 'var(--space-2) var(--space-4)', borderRadius: 'var(--radius-lg)', border: '1px solid var(--border-subtle)' }}>
-              {params.code}
+              {code}
             </code>
           </motion.div>
         ) : cert && (
@@ -163,7 +167,7 @@ export default function CertVerifyPage({ params }: { params: { code: string } })
                 }}>
                   <span style={{ fontSize: 'var(--text-xs)', color: 'var(--text-tertiary)' }}>کد تأیید:</span>
                   <code style={{ fontSize: 'var(--text-xs)', color: 'var(--accent-400)', fontFamily: 'monospace', direction: 'ltr' }}>
-                    {params.code}
+                    {code}
                   </code>
                 </div>
               </div>
